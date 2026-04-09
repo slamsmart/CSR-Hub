@@ -3,13 +3,32 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: CSR Hub API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User management
+  - name: organizations
+    description: Organization management
+  - name: proposals
+    description: CSR proposal management
+  - name: projects
+    description: Funded project management
+  - name: cofunding
+    description: Co-funding operations
+  - name: notifications
+    description: Notification management
+  - name: dashboard
+    description: Dashboard analytics
+  - name: audit
+    description: Audit logs
+
 paths:
   /healthz:
     get:
@@ -24,6 +43,841 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # AUTH
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current user
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # USERS
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: page
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: User list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ORGANIZATIONS
+  /organizations:
+    get:
+      operationId: listOrganizations
+      tags: [organizations]
+      summary: List organizations
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: search
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: page
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Organization list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationListResponse"
+    post:
+      operationId: createOrganization
+      tags: [organizations]
+      summary: Create organization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrganizationBody"
+      responses:
+        "201":
+          description: Created organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+
+  /organizations/{id}:
+    get:
+      operationId: getOrganization
+      tags: [organizations]
+      summary: Get organization
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateOrganization
+      tags: [organizations]
+      summary: Update organization
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrganizationBody"
+      responses:
+        "200":
+          description: Updated organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+
+  /organizations/{id}/verify:
+    post:
+      operationId: verifyOrganization
+      tags: [organizations]
+      summary: Verify or reject organization
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyOrganizationBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+
+  # PROPOSALS
+  /proposals:
+    get:
+      operationId: listProposals
+      tags: [proposals]
+      summary: List proposals
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: category
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: province
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: organizationId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: search
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: page
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Proposal list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProposalListResponse"
+    post:
+      operationId: createProposal
+      tags: [proposals]
+      summary: Create proposal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProposalBody"
+      responses:
+        "201":
+          description: Created proposal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proposal"
+
+  /proposals/{id}:
+    get:
+      operationId: getProposal
+      tags: [proposals]
+      summary: Get proposal detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Proposal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProposalDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateProposal
+      tags: [proposals]
+      summary: Update proposal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProposalBody"
+      responses:
+        "200":
+          description: Updated proposal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proposal"
+
+  /proposals/{id}/status:
+    patch:
+      operationId: updateProposalStatus
+      tags: [proposals]
+      summary: Update proposal status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProposalStatusBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proposal"
+
+  /proposals/{id}/ai-score:
+    get:
+      operationId: getProposalAiScore
+      tags: [proposals]
+      summary: Get AI score and recommendations for proposal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: AI score result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiScoreResponse"
+
+  # PROJECTS
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List projects
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: organizationId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: page
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Project list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectListResponse"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get project detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /projects/{id}/milestones:
+    get:
+      operationId: listProjectMilestones
+      tags: [projects]
+      summary: List project milestones
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Milestones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Milestone"
+    post:
+      operationId: createProjectMilestone
+      tags: [projects]
+      summary: Add milestone
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMilestoneBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Milestone"
+
+  /projects/{id}/reports:
+    get:
+      operationId: listProjectReports
+      tags: [projects]
+      summary: List project reports
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectReport"
+    post:
+      operationId: createProjectReport
+      tags: [projects]
+      summary: Create project report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectReportBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectReport"
+
+  # CO-FUNDING
+  /cofunding:
+    get:
+      operationId: listCofunding
+      tags: [cofunding]
+      summary: List co-funding commitments
+      parameters:
+        - name: proposalId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: organizationId
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Co-funding list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CofundingCommitment"
+    post:
+      operationId: createCofunding
+      tags: [cofunding]
+      summary: Commit co-funding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCofundingBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CofundingCommitment"
+
+  /cofunding/{id}:
+    patch:
+      operationId: updateCofunding
+      tags: [cofunding]
+      summary: Update co-funding commitment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCofundingBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CofundingCommitment"
+
+  # NOTIFICATIONS
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications for current user
+      parameters:
+        - name: unread
+          in: query
+          schema:
+            type: ["boolean", "null"]
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications read
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  # DASHBOARD ANALYTICS
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get platform-wide statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/proposals-by-category:
+    get:
+      operationId: getProposalsByCategory
+      tags: [dashboard]
+      summary: Proposals grouped by category
+      responses:
+        "200":
+          description: Category breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryCount"
+
+  /dashboard/proposals-by-province:
+    get:
+      operationId: getProposalsByProvince
+      tags: [dashboard]
+      summary: Proposals grouped by province
+      responses:
+        "200":
+          description: Province breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProvinceCount"
+
+  /dashboard/funding-timeline:
+    get:
+      operationId: getFundingTimeline
+      tags: [dashboard]
+      summary: Monthly funding amounts
+      responses:
+        "200":
+          description: Funding over time
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FundingTimelineEntry"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Recent platform activity
+      responses:
+        "200":
+          description: Recent activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /dashboard/top-organizations:
+    get:
+      operationId: getTopOrganizations
+      tags: [dashboard]
+      summary: Top performing organizations
+      responses:
+        "200":
+          description: Top organizations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationSummary"
+
+  /dashboard/ai-matches:
+    get:
+      operationId: getAiMatches
+      tags: [dashboard]
+      summary: AI-matched proposals for current company
+      responses:
+        "200":
+          description: Matched proposals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AiMatchedProposal"
+
+  # AUDIT LOGS
+  /audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [audit]
+      summary: List audit logs
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: action
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: page
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLogListResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +888,1094 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    # AUTH
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    RegisterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+      required:
+        - name
+        - email
+        - password
+        - role
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+      required:
+        - user
+        - token
+
+    # USERS
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        emailVerified:
+          type: boolean
+        organizationId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - role
+        - isActive
+        - emailVerified
+        - createdAt
+        - updatedAt
+
+    UpdateUserBody:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        isActive:
+          type: ["boolean", "null"]
+
+    UserListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    # ORGANIZATIONS
+    Organization:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+        description:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        province:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        npwp:
+          type: ["string", "null"]
+        legalStatus:
+          type: ["string", "null"]
+        verificationStatus:
+          type: string
+        trustScore:
+          type: ["integer", "null"]
+        verifiedAt:
+          type: ["string", "null"]
+        totalProposals:
+          type: integer
+        totalFunded:
+          type: integer
+        successRate:
+          type: number
+        focusAreas:
+          type: array
+          items:
+            type: string
+        sdgGoals:
+          type: array
+          items:
+            type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - type
+        - verificationStatus
+        - totalProposals
+        - totalFunded
+        - successRate
+        - focusAreas
+        - sdgGoals
+        - createdAt
+        - updatedAt
+
+    CreateOrganizationBody:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        description:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        province:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        npwp:
+          type: ["string", "null"]
+        legalStatus:
+          type: ["string", "null"]
+        focusAreas:
+          type: array
+          items:
+            type: string
+        sdgGoals:
+          type: array
+          items:
+            type: integer
+      required:
+        - name
+        - type
+
+    UpdateOrganizationBody:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        province:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        focusAreas:
+          type: array
+          items:
+            type: string
+        sdgGoals:
+          type: array
+          items:
+            type: integer
+
+    VerifyOrganizationBody:
+      type: object
+      properties:
+        action:
+          type: string
+        notes:
+          type: ["string", "null"]
+      required:
+        - action
+
+    OrganizationListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Organization"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    OrganizationSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+        logoUrl:
+          type: ["string", "null"]
+        trustScore:
+          type: ["integer", "null"]
+        totalFunded:
+          type: integer
+        successRate:
+          type: number
+      required:
+        - id
+        - name
+        - type
+        - totalFunded
+        - successRate
+
+    # PROPOSALS
+    Proposal:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        summary:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+        organizationId:
+          type: integer
+        organizationName:
+          type: string
+        province:
+          type: string
+        city:
+          type: ["string", "null"]
+        targetBeneficiaries:
+          type: integer
+        budgetTotal:
+          type: integer
+        fundedAmount:
+          type: integer
+        startDate:
+          type: ["string", "null"]
+        endDate:
+          type: ["string", "null"]
+        sdgGoals:
+          type: array
+          items:
+            type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        aiScore:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - summary
+        - category
+        - status
+        - organizationId
+        - organizationName
+        - province
+        - targetBeneficiaries
+        - budgetTotal
+        - fundedAmount
+        - sdgGoals
+        - tags
+        - createdAt
+        - updatedAt
+
+    ProposalDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        summary:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+        organizationId:
+          type: integer
+        organizationName:
+          type: string
+        province:
+          type: string
+        city:
+          type: ["string", "null"]
+        targetBeneficiaries:
+          type: integer
+        budgetTotal:
+          type: integer
+        fundedAmount:
+          type: integer
+        budgetBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetItem"
+        startDate:
+          type: ["string", "null"]
+        endDate:
+          type: ["string", "null"]
+        sdgGoals:
+          type: array
+          items:
+            type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        aiScore:
+          type: ["integer", "null"]
+        aiSummary:
+          type: ["string", "null"]
+        statusHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusHistoryItem"
+        cofunding:
+          type: array
+          items:
+            $ref: "#/components/schemas/CofundingCommitment"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - summary
+        - description
+        - category
+        - status
+        - organizationId
+        - organizationName
+        - province
+        - targetBeneficiaries
+        - budgetTotal
+        - fundedAmount
+        - budgetBreakdown
+        - sdgGoals
+        - tags
+        - statusHistory
+        - cofunding
+        - createdAt
+        - updatedAt
+
+    BudgetItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        description:
+          type: string
+        amount:
+          type: integer
+        category:
+          type: string
+      required:
+        - id
+        - description
+        - amount
+        - category
+
+    StatusHistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        notes:
+          type: ["string", "null"]
+        changedBy:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - status
+        - changedBy
+        - createdAt
+
+    CreateProposalBody:
+      type: object
+      properties:
+        title:
+          type: string
+        summary:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        province:
+          type: string
+        city:
+          type: ["string", "null"]
+        targetBeneficiaries:
+          type: integer
+        budgetTotal:
+          type: integer
+        startDate:
+          type: ["string", "null"]
+        endDate:
+          type: ["string", "null"]
+        sdgGoals:
+          type: array
+          items:
+            type: integer
+        tags:
+          type: array
+          items:
+            type: string
+      required:
+        - title
+        - summary
+        - description
+        - category
+        - province
+        - targetBeneficiaries
+        - budgetTotal
+
+    UpdateProposalBody:
+      type: object
+      properties:
+        title:
+          type: ["string", "null"]
+        summary:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        province:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        targetBeneficiaries:
+          type: ["integer", "null"]
+        budgetTotal:
+          type: ["integer", "null"]
+        startDate:
+          type: ["string", "null"]
+        endDate:
+          type: ["string", "null"]
+        sdgGoals:
+          type: array
+          items:
+            type: integer
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateProposalStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+        notes:
+          type: ["string", "null"]
+      required:
+        - status
+
+    ProposalListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Proposal"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    AiScoreResponse:
+      type: object
+      properties:
+        score:
+          type: integer
+        completeness:
+          type: integer
+        relevance:
+          type: integer
+        impact:
+          type: integer
+        riskLevel:
+          type: string
+        summary:
+          type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        tags:
+          type: array
+          items:
+            type: string
+        sdgAlignment:
+          type: array
+          items:
+            type: integer
+      required:
+        - score
+        - completeness
+        - relevance
+        - impact
+        - riskLevel
+        - summary
+        - recommendations
+        - tags
+        - sdgAlignment
+
+    # PROJECTS
+    ProjectDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        proposalId:
+          type: integer
+        title:
+          type: string
+        status:
+          type: string
+        organizationId:
+          type: integer
+        organizationName:
+          type: string
+        budgetTotal:
+          type: integer
+        budgetUsed:
+          type: integer
+        progressPercent:
+          type: integer
+        startDate:
+          type: ["string", "null"]
+        endDate:
+          type: ["string", "null"]
+        milestones:
+          type: array
+          items:
+            $ref: "#/components/schemas/Milestone"
+        reports:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectReport"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - proposalId
+        - title
+        - status
+        - organizationId
+        - organizationName
+        - budgetTotal
+        - budgetUsed
+        - progressPercent
+        - milestones
+        - reports
+        - createdAt
+        - updatedAt
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        proposalId:
+          type: integer
+        title:
+          type: string
+        status:
+          type: string
+        organizationId:
+          type: integer
+        organizationName:
+          type: string
+        budgetTotal:
+          type: integer
+        budgetUsed:
+          type: integer
+        progressPercent:
+          type: integer
+        startDate:
+          type: ["string", "null"]
+        endDate:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - proposalId
+        - title
+        - status
+        - organizationId
+        - organizationName
+        - budgetTotal
+        - budgetUsed
+        - progressPercent
+        - createdAt
+        - updatedAt
+
+    ProjectListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    Milestone:
+      type: object
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        completedAt:
+          type: ["string", "null"]
+        status:
+          type: string
+        progressPercent:
+          type: integer
+      required:
+        - id
+        - projectId
+        - title
+        - status
+        - progressPercent
+
+    CreateMilestoneBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+      required:
+        - title
+
+    ProjectReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        reportType:
+          type: string
+        budgetUsed:
+          type: ["integer", "null"]
+        beneficiariesCount:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - projectId
+        - title
+        - content
+        - reportType
+        - createdAt
+
+    CreateProjectReportBody:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        reportType:
+          type: string
+        budgetUsed:
+          type: ["integer", "null"]
+        beneficiariesCount:
+          type: ["integer", "null"]
+      required:
+        - title
+        - content
+        - reportType
+
+    # CO-FUNDING
+    CofundingCommitment:
+      type: object
+      properties:
+        id:
+          type: integer
+        proposalId:
+          type: integer
+        organizationId:
+          type: integer
+        organizationName:
+          type: string
+        amount:
+          type: integer
+        percentageShare:
+          type: number
+        status:
+          type: string
+        notes:
+          type: ["string", "null"]
+        committedAt:
+          type: string
+        confirmedAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - proposalId
+        - organizationId
+        - organizationName
+        - amount
+        - percentageShare
+        - status
+        - committedAt
+
+    CreateCofundingBody:
+      type: object
+      properties:
+        proposalId:
+          type: integer
+        amount:
+          type: integer
+        notes:
+          type: ["string", "null"]
+      required:
+        - proposalId
+        - amount
+
+    UpdateCofundingBody:
+      type: object
+      properties:
+        status:
+          type: ["string", "null"]
+        amount:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+
+    # NOTIFICATIONS
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        title:
+          type: string
+        message:
+          type: string
+        type:
+          type: string
+        isRead:
+          type: boolean
+        linkUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - title
+        - message
+        - type
+        - isRead
+        - createdAt
+
+    # DASHBOARD ANALYTICS
+    DashboardStats:
+      type: object
+      properties:
+        totalProposals:
+          type: integer
+        approvedProposals:
+          type: integer
+        activeProjects:
+          type: integer
+        completedProjects:
+          type: integer
+        totalFundingRp:
+          type: integer
+        totalBeneficiaries:
+          type: integer
+        verifiedOrganizations:
+          type: integer
+        pendingVerification:
+          type: integer
+        averageTrustScore:
+          type: number
+        successRate:
+          type: number
+      required:
+        - totalProposals
+        - approvedProposals
+        - activeProjects
+        - completedProjects
+        - totalFundingRp
+        - totalBeneficiaries
+        - verifiedOrganizations
+        - pendingVerification
+        - averageTrustScore
+        - successRate
+
+    CategoryCount:
+      type: object
+      properties:
+        category:
+          type: string
+        count:
+          type: integer
+        totalFunding:
+          type: integer
+      required:
+        - category
+        - count
+        - totalFunding
+
+    ProvinceCount:
+      type: object
+      properties:
+        province:
+          type: string
+        count:
+          type: integer
+      required:
+        - province
+        - count
+
+    FundingTimelineEntry:
+      type: object
+      properties:
+        month:
+          type: string
+        amount:
+          type: integer
+        count:
+          type: integer
+      required:
+        - month
+        - amount
+        - count
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        action:
+          type: string
+        description:
+          type: string
+        actorName:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - action
+        - description
+        - actorName
+        - entityType
+        - createdAt
+
+    AiMatchedProposal:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        organizationName:
+          type: string
+        category:
+          type: string
+        province:
+          type: string
+        budgetTotal:
+          type: integer
+        aiScore:
+          type: integer
+        matchReason:
+          type: string
+        sdgGoals:
+          type: array
+          items:
+            type: integer
+      required:
+        - id
+        - title
+        - organizationName
+        - category
+        - province
+        - budgetTotal
+        - aiScore
+        - matchReason
+        - sdgGoals
+
+    # AUDIT
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: ["integer", "null"]
+        userName:
+          type: ["string", "null"]
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: ["integer", "null"]
+        details:
+          type: ["string", "null"]
+        ipAddress:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - action
+        - entityType
+        - createdAt
+
+    AuditLogListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLog"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit

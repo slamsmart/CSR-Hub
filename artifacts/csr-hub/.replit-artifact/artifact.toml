@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "CSR Hub"
+version = "1.0.0"
+id = "artifacts/csr-hub"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23432
+
+[services.development]
+run = "pnpm --filter @workspace/csr-hub run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/csr-hub", "run", "build" ]
+publicDir = "artifacts/csr-hub/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23432"
+BASE_PATH = "/"

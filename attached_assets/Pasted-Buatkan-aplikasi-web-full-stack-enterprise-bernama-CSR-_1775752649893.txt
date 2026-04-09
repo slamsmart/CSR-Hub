@@ -1,0 +1,324 @@
+Buatkan aplikasi web full-stack enterprise bernama "CSR Hub" (alternatif nama: "SinergiCSR"), yaitu platform marketplace dua arah yang mempertemukan perusahaan/industri dengan NGO, komunitas, sekolah, koperasi, yayasan, dan startup sosial untuk pengajuan, seleksi, pendanaan, monitoring, dan pelaporan program CSR secara transparan, aman, modern, dan sangat kaya fitur.
+
+Tujuan utama aplikasi:
+1. Menjadi pusat kolaborasi CSR nasional yang kredibel.
+2. Memudahkan pengusul membuat proposal terstandar dan terverifikasi.
+3. Memudahkan perusahaan menemukan program CSR yang relevan berdasarkan wilayah, kategori, anggaran, SDGs, dan dampak.
+4. Menyediakan pelacakan, monitoring, audit, dan pelaporan dampak secara real-time.
+5. Memiliki keamanan siber tingkat tinggi, siap untuk data sensitif, dokumen legal, dan transaksi pendanaan.
+
+Buat aplikasi yang production-ready, responsif, scalable, modular, dan memiliki UI/UX premium, profesional, modern, elegan, dan mudah dipakai oleh pengguna Indonesia.
+
+TECH STACK
+- Frontend: Next.js terbaru + TypeScript + Tailwind CSS + shadcn/ui atau komponen UI modern setara
+- Backend: Node.js + Next.js API routes atau NestJS
+- Database: PostgreSQL
+- ORM: Prisma
+- Auth: NextAuth/Auth.js atau sistem auth aman setara
+- Storage: cloud/local object storage untuk dokumen proposal, laporan, dan bukti kegiatan
+- Realtime: WebSocket atau polling efisien untuk notifikasi dan status
+- Charts: library visualisasi modern
+- AI Features: rekomendasi matching proposal-perusahaan, ringkasan proposal, klasifikasi kategori, deteksi kelengkapan proposal
+- Deployment-ready: konfigurasi environment, struktur project rapi, reusable component, clean code
+
+BAHASA DAN LOKALISASI
+- Bahasa utama: Indonesia
+- Mata uang: Rupiah
+- Format tanggal: Indonesia
+- Lokasi: Provinsi, kabupaten/kota, kecamatan bila diperlukan
+- Siapkan struktur multi-bahasa bila nanti ingin ditambah English
+
+ROLE / HAK AKSES
+Buat role-based access control (RBAC) yang detail:
+1. Super Admin
+2. Admin Platform
+3. Verifikator
+4. Auditor / Monitoring Officer
+5. Perusahaan / Industri
+6. NGO / Komunitas / Sekolah / Startup Sosial / Yayasan
+7. Donor Kolaborator / Co-funding Partner
+8. Public Visitor
+
+FITUR UTAMA PLATFORM
+
+A. Untuk Pengusul
+- Registrasi organisasi
+- Profil organisasi lengkap
+- Upload legalitas: akta, NPWP, surat izin, sertifikat, dll
+- Verification badge setelah lolos verifikasi
+- Portofolio kegiatan sebelumnya
+- Dashboard proposal
+- Membuat proposal digital terstandarisasi dengan step-by-step wizard
+- Simpan draft proposal
+- Kategori proposal: Pendidikan, Lingkungan, Ekonomi, Kesehatan, Infrastruktur Sosial, Pemberdayaan Perempuan, UMKM, Kebencanaan, dll
+- Penentuan target wilayah
+- Input target penerima manfaat
+- Input kebutuhan anggaran rinci
+- Timeline proyek
+- Lampiran dokumen pendukung
+- Impact calculator untuk estimasi dampak
+- Status tracking proposal: Draft, Dikirim, Review, Revisi, Disetujui, Ditolak, Didanai, Berjalan, Selesai
+- Pesan/revisi dari perusahaan atau admin
+- Pelaporan progres kegiatan
+- Upload dokumentasi kegiatan
+- Pelaporan penggunaan dana
+- Audit trail aktivitas
+
+B. Untuk Perusahaan
+- Registrasi perusahaan
+- Profil CSR perusahaan
+- Fokus program CSR
+- Kriteria penerimaan proposal:
+  - kategori
+  - wilayah
+  - budget minimum/maksimum
+  - target SDGs
+  - jenis penerima manfaat
+  - skala dampak
+- Dashboard proposal masuk
+- Filter canggih proposal
+- Shortlist proposal
+- Bandingkan proposal
+- AI smart matching untuk rekomendasi proposal paling relevan
+- Riwayat pendanaan
+- Multi-project management
+- Co-funding / crowdfunding collaboration dengan perusahaan lain
+- Approval workflow internal perusahaan
+- Monitoring proyek yang didanai
+- Laporan keberlanjutan / sustainability report otomatis
+- Ekspor PDF/Excel
+- Ringkasan KPI CSR per tahun
+
+C. Fitur Kolaborasi
+- Co-funding satu proposal oleh banyak perusahaan
+- Pembagian nominal komitmen tiap perusahaan
+- Persentase kontribusi
+- Status pendanaan total vs target
+- Ruang kolaborasi / diskusi
+- Timeline milestone bersama
+- Dokumen bersama
+- Notifikasi saat target dana terpenuhi
+
+D. Fitur Verifikasi dan Kepercayaan
+- Verification badge
+- Verifikasi legalitas organisasi
+- Verifikasi identitas admin organisasi
+- KYC/KYB basic workflow
+- Review manual oleh verifikator
+- Fraud/risk flags
+- Skor kepercayaan organisasi
+- Histori proyek sukses
+- Reputasi dan rating berbasis penyelesaian proyek
+
+E. Fitur Monitoring dan Audit
+- Monitoring real-time progres proyek
+- Persentase progress fisik dan keuangan
+- Upload bukti kegiatan
+- Audit checklist
+- Catatan auditor lapangan
+- Temuan audit
+- Status kepatuhan
+- Rekonsiliasi anggaran vs realisasi
+- Dashboard transparansi
+
+F. Fitur AI / Smart Features
+- Smart matching proposal dengan perusahaan
+- Value alignment scoring
+- Rekomendasi berdasarkan fokus CSR perusahaan
+- AI ringkasan proposal
+- AI penilaian kelengkapan proposal
+- AI tagging otomatis kategori, wilayah, SDGs, dan tema
+- AI risk alerts untuk proposal yang mencurigakan atau tidak lengkap
+- AI impact summary untuk laporan tahunan
+
+G. Fitur Publik
+- Halaman landing page profesional
+- Direktori proposal terpilih yang boleh dipublikasikan
+- Direktori perusahaan partisipan
+- Statistik dampak nasional
+- Kisah sukses / success stories
+- Halaman tentang platform
+- FAQ
+- Kontak
+- Kebijakan privasi
+- Syarat dan ketentuan
+
+MODULE HALAMAN YANG HARUS DIBUAT
+1. Landing page premium
+2. Halaman login / register multi-role
+3. Dashboard admin
+4. Dashboard pengusul
+5. Dashboard perusahaan
+6. Dashboard verifikator
+7. Dashboard auditor
+8. Halaman daftar proposal
+9. Halaman detail proposal
+10. Form wizard proposal multi-step
+11. Halaman matching rekomendasi AI
+12. Halaman monitoring proyek
+13. Halaman pelaporan dana
+14. Halaman sustainability report
+15. Halaman kolaborasi co-funding
+16. Halaman verifikasi organisasi
+17. Halaman notifikasi
+18. Halaman pengaturan akun dan organisasi
+19. Halaman audit logs
+20. Halaman manajemen pengguna
+
+DASHBOARD DAN ANALYTICS
+Buat dashboard visual lengkap dengan:
+- Total proposal masuk
+- Total proposal disetujui
+- Total dana tersalurkan
+- Total penerima manfaat
+- Proposal berdasarkan kategori
+- Proposal berdasarkan wilayah
+- Nilai dampak per sektor
+- Grafik pendanaan bulanan
+- Status proyek
+- Tingkat keberhasilan proyek
+- Organisasi terverifikasi
+- Aktivitas terbaru
+- Risk alerts dan compliance alerts
+
+DATA MODEL UTAMA
+Buat struktur database lengkap untuk entitas berikut:
+- Users
+- Roles
+- Organizations
+- CompanyProfiles
+- NGOProfiles
+- VerificationDocuments
+- Proposals
+- ProposalBudgets
+- ProposalAttachments
+- ProposalStatusHistory
+- FundingCommitments
+- CoFundingParticipants
+- Projects
+- ProjectMilestones
+- ProjectReports
+- ImpactMetrics
+- AuditReports
+- Notifications
+- Messages
+- ActivityLogs
+- SustainabilityReports
+- SDGTags
+- Regions
+- TrustScores
+- FraudFlags
+
+CYBER SECURITY
+Aplikasi ini wajib memiliki keamanan siber yang sangat kuat. Terapkan best practice keamanan sejak desain awal:
+1. Authentication & Authorization
+- Secure authentication
+- Strong password policy
+- MFA / 2FA
+- Email verification
+- Session management aman
+- RBAC ketat
+- Optional device/session history
+- Account lockout / rate limiting untuk brute force
+
+2. Data Protection
+- Hash password dengan algoritma kuat
+- Enkripsi data sensitif saat transit dan saat tersimpan
+- Secure file upload validation
+- Malware scanning strategy untuk file upload
+- Signed URL / akses file terproteksi
+- Kolom sensitif dienkripsi
+- Backup strategy
+
+3. App Security
+- Validasi input ketat
+- Sanitasi output
+- Cegah XSS, CSRF, SQL Injection, SSRF, IDOR, file upload abuse, path traversal
+- Gunakan secure headers
+- CSP policy
+- CORS policy yang ketat
+- Rate limiting dan throttling
+- Proteksi API dari abuse
+- Anti-spam untuk form publik
+
+4. Audit & Compliance
+- Audit logs detail
+- Login history
+- Suspicious activity detection
+- Risk scoring
+- Error logging aman tanpa membocorkan data sensitif
+- Retention policy
+- Privacy-by-design
+- Siapkan fondasi kepatuhan terhadap UU Perlindungan Data Pribadi Indonesia
+
+5. Infrastructure Security
+- Environment variables aman
+- Secret management
+- Prinsip least privilege
+- Middleware keamanan
+- Monitoring dan alerting
+- Dependency security checks
+- Secure default configuration
+
+6. Coding Security
+- Type-safe code
+- Server-side validation
+- Zod atau validator setara
+- Prisma query aman
+- Error handling yang aman
+- Jangan hardcode secret
+- Jangan expose stack trace ke user
+
+UI/UX
+- Desain profesional kelas enterprise
+- Modern, bersih, terpercaya, dan fokus pada kredibilitas sosial
+- Mobile responsive
+- Aksesibel
+- Navigasi jelas
+- Dark/light mode optional
+- Gunakan warna yang mencerminkan kepercayaan, dampak sosial, dan keberlanjutan
+- Tampilkan badge verifikasi, status proposal, progress proyek, dan indikator dampak dengan jelas
+
+OUTPUT YANG SAYA INGINKAN
+Buat hasil yang sangat lengkap, meliputi:
+1. Struktur folder project
+2. Skema database Prisma lengkap
+3. Desain arsitektur aplikasi
+4. Daftar fitur rinci per role
+5. Seluruh halaman inti
+6. Komponen UI reusable
+7. API endpoints utama
+8. Middleware auth dan security
+9. Seed data dummy realistis Indonesia
+10. Dashboard analytics
+11. Sistem notifikasi
+12. Dokumentasi setup
+13. Contoh .env.example
+14. Validasi form lengkap
+15. Dummy AI recommendation logic
+16. Audit log system
+17. File upload system aman
+18. Error handling strategy
+19. Loading, empty state, dan error state
+20. Testing basic untuk auth, proposal, dan permission
+
+IMPLEMENTASI
+- Tulis kode nyata, bukan hanya konsep
+- Gunakan best practice clean architecture
+- Pisahkan module dengan rapi
+- Buat reusable hooks, services, dan components
+- Sertakan data dummy agar aplikasi langsung terlihat hidup
+- Pastikan semua fitur inti bisa dijalankan
+- Berikan komentar seperlunya pada bagian kompleks
+- Hindari placeholder yang terlalu kosong
+- Jika ada fitur AI yang belum memakai model eksternal, buat simulasi logic lokal yang realistis
+
+Tambahan penting:
+- Buat sistem proposal yang terstandarisasi agar semua pengusul mengisi format yang sama
+- Buat workflow verifikasi yang ketat agar perusahaan percaya
+- Buat pelaporan keuangan yang transparan dan bisa diaudit
+- Buat sustainability report generator untuk perusahaan
+- Buat halaman admin untuk memoderasi proposal, organisasi, dan laporan
+- Pastikan desain database siap dikembangkan ke skala nasional
+
+Jika perlu, mulai dari MVP yang sudah sangat solid, tetapi strukturkan kode agar mudah berkembang menjadi platform enterprise penuh.
