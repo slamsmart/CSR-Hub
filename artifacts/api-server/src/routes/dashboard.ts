@@ -305,7 +305,7 @@ router.get("/dashboard/sustainability-report/:orgId", async (req, res): Promise<
     taxDocument: {
       documentNumber: `TAX-CSR-${org.id}-${new Date().getFullYear()}`,
       validUntil: `${new Date().getFullYear() + 1}-03-31`,
-      eligibleDeductionRp: Math.floor(totalFunded * 0.5),
+      eligibleDeductionRp: Math.floor(totalFunded * 0.22),
       legalBasis: "PP No. 93 Tahun 2010 & PMK No. 92 Tahun 2020",
     },
   });

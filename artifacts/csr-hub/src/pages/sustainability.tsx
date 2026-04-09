@@ -343,9 +343,9 @@ export default function SustainabilityPage() {
       pdf.text("RINCIAN POTONGAN PAJAK", M + 2, y + 5); y += 12;
 
       const taxRows = [
-        ["Total Investasi CSR yang Diakui", formatRupiah(report.summary?.totalFundedRp ?? 0)],
-        ["Persentase Potongan yang Diperkenankan", "50% dari total investasi CSR"],
-        ["Nilai Potongan Pajak yang Dapat Diklaim", formatRupiah(report.taxDocument?.eligibleDeductionRp ?? 0)],
+        ["Total Biaya CSR (Pengurang Penghasilan Bruto)", formatRupiah(report.summary?.totalFundedRp ?? 0)],
+        ["Tarif PPh Badan yang Berlaku", "22% (sesuai UU HPP)"],
+        ["Estimasi Penghematan Pajak (PPh Badan × Biaya CSR)", formatRupiah(report.taxDocument?.eligibleDeductionRp ?? 0)],
       ];
 
       pdf.setFontSize(9);
@@ -377,7 +377,7 @@ export default function SustainabilityPage() {
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(9);
       pdf.setFont("helvetica", "normal");
-      pdf.text("TOTAL POTONGAN PAJAK CSR YANG DAPAT DIKLAIM", W / 2, y + 7, { align: "center" });
+      pdf.text("ESTIMASI PENGHEMATAN PAJAK PPh BADAN (22%)", W / 2, y + 7, { align: "center" });
       pdf.setFontSize(18);
       pdf.setFont("helvetica", "bold");
       pdf.text(formatRupiah(report.taxDocument?.eligibleDeductionRp ?? 0), W / 2, y + 17, { align: "center" });
@@ -390,8 +390,9 @@ export default function SustainabilityPage() {
       const notes = [
         "* Dokumen ini merupakan bukti potongan pajak penghasilan atas sumbangan yang dapat dikurangkan sesuai",
         "  Peraturan Pemerintah Nomor 93 Tahun 2010 tentang Sumbangan Penanggulangan Bencana Nasional.",
-        "* Potongan dihitung berdasarkan 50% dari total investasi CSR yang tersalurkan melalui program terverifikasi.",
-        "* Untuk pengakuan perpajakan, lampirkan dokumen ini pada SPT Tahunan Badan.",
+        "* Mekanisme: Seluruh biaya CSR menjadi pengurang penghasilan bruto (biaya fiskal), bukan kredit pajak langsung.",
+        "* Estimasi penghematan = Biaya CSR × Tarif PPh Badan 22% (UU HPP). Batas maksimal: 5% dari penghasilan neto",
+        "  fiskal tahun pajak sebelumnya (PP No. 93/2010). Lampirkan dokumen ini pada SPT Tahunan Badan.",
       ];
       notes.forEach(note => { pdf.text(note, M, y); y += 5; });
 
@@ -677,7 +678,7 @@ export default function SustainabilityPage() {
                   ))}
                 </div>
                 <div className="bg-white rounded-xl p-4 text-center border border-amber-200">
-                  <p className="text-xs text-muted-foreground mb-1">Potongan Pajak yang Dapat Diklaim</p>
+                  <p className="text-xs text-muted-foreground mb-1">Estimasi Penghematan Pajak PPh Badan (22%)</p>
                   <p className="text-2xl font-bold text-amber-700">{formatRupiah(report.taxDocument?.eligibleDeductionRp ?? 0)}</p>
                   <div className="flex items-center justify-center gap-1 mt-2">
                     <Shield className="w-3 h-3 text-green-500" />
