@@ -5,3 +5,4 @@ export * from "./projects";
 export * from "./cofunding";
 export * from "./notifications";
 export * from "./audit";
+export * from "./fund-reports";

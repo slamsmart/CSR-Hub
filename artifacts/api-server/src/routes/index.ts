@@ -9,6 +9,7 @@ import cofundingRouter from "./cofunding";
 import notificationsRouter from "./notifications";
 import dashboardRouter from "./dashboard";
 import auditRouter from "./audit";
+import fundReportsRouter from "./fund-reports";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(cofundingRouter);
 router.use(notificationsRouter);
 router.use(dashboardRouter);
 router.use(auditRouter);
+router.use(fundReportsRouter);
 
 export default router;
