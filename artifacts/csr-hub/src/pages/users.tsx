@@ -36,7 +36,7 @@ export default function UsersPage() {
   const totalPages = Math.ceil(total / 20);
 
   const filtered = search
-    ? users.filter((u: any) => u.full_name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase()))
+    ? users.filter((u: any) => (u.name || u.full_name || "").toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase()))
     : users;
 
   return (
@@ -63,7 +63,8 @@ export default function UsersPage() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((u: any) => {
-            const initials = u.full_name?.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() ?? "?";
+            const uName = u.name || u.full_name || u.email || "Pengguna";
+            const initials = uName !== u.email ? uName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() : "?";
             return (
               <Card key={u.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4 flex items-start gap-3">
@@ -74,7 +75,7 @@ export default function UsersPage() {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="font-semibold text-foreground text-sm truncate">{u.full_name}</p>
+                      <p className="font-semibold text-foreground text-sm truncate">{uName}</p>
                       <Badge className={`${getRoleColor(u.role ?? "")} border-0 text-xs shrink-0`}>
                         {getStatusLabel(u.role ?? "")}
                       </Badge>

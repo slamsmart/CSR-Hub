@@ -15,7 +15,7 @@ import { Leaf, AlertCircle } from "lucide-react";
 import { useState } from "react";
 
 const schema = z.object({
-  full_name: z.string().min(3, "Nama minimal 3 karakter"),
+  name: z.string().min(3, "Nama minimal 3 karakter"),
   email: z.string().email("Email tidak valid"),
   password: z.string().min(6, "Password minimal 6 karakter"),
   role: z.enum(["perusahaan", "ngo", "donor", "public"]),
@@ -78,8 +78,8 @@ export default function RegisterPage() {
 
               <div className="space-y-2">
                 <Label>Nama Lengkap</Label>
-                <Input placeholder="Budi Santoso" {...register("full_name")} />
-                {errors.full_name && <p className="text-destructive text-xs">{errors.full_name.message}</p>}
+                <Input placeholder="Budi Santoso" {...register("name")} />
+                {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
               </div>
 
               <div className="space-y-2">

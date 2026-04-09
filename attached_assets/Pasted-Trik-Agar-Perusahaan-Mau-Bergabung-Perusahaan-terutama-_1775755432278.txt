@@ -1,0 +1,30 @@
+Trik Agar Perusahaan Mau Bergabung
+Perusahaan (terutama level menengah ke atas) tidak mencari "tempat berdonasi", melainkan "mitra strategis". Berikut adalah trik agar mereka mau masuk ke platform Anda:
+
+1. Selesaikan Masalah Administrasi (Tax Deduction)
+Perusahaan sangat peduli pada potongan pajak dari biaya CSR. Jika platform Anda otomatis menyediakan dokumen yang sah untuk klaim pengurangan pajak sesuai aturan pemerintah, perusahaan akan sangat tertarik.
+
+2. Fokus pada ESG dan Laporan Keberlanjutan
+Perusahaan publik (Tbk) wajib mengeluarkan laporan keberlanjutan.
+
+Trik: Buat fitur "One-Click Sustainability Report". Katakan pada mereka: "Gunakan platform kami, dan Anda tidak perlu pusing menyusun laporan CSR tahunan. Semua data, foto kegiatan, dan metrik dampak sudah otomatis terangkum dalam format standar global (GRI)."
+
+3. Fitur "Vetting" (Kurasi) Ketat
+Ketakutan terbesar perusahaan adalah mendanai organisasi fiktif atau yang memiliki masalah hukum.
+
+Trik: Tampilkan bahwa setiap NGO di platform Anda telah melewati proses audit legalitas yang ketat. Ini memberikan rasa aman (Peace of Mind) bagi manajemen perusahaan.
+
+4. Co-Funding untuk Proyek Besar
+Kadang perusahaan ingin mengerjakan proyek besar (misal: membangun sekolah) tapi budget mereka terbatas.
+
+Trik: Fasilitasi fitur di mana 3-4 perusahaan bisa "patungan" untuk satu proyek besar di wilayah yang sama. Ini meningkatkan efisiensi biaya mereka namun dampak publiknya tetap luas.
+
+5. Pencitraan (PR Value)
+Perusahaan butuh eksposur positif.
+
+Trik: Sediakan halaman khusus "Leaderboard Perusahaan Paling Berdampak" atau publikasi kisah sukses ke media partner. Ini adalah insentif pemasaran gratis bagi mereka.
+
+6. Efisiensi "Scouting"
+Biasanya, tim CSR perusahaan harus membaca ratusan email proposal yang formatnya berantakan.
+
+Trik: Tawarkan efisiensi waktu. "Daripada tim Anda membaca 100 email manual, gunakan AI kami untuk memfilter 5 proposal yang paling sesuai dengan target wilayah dan fokus perusahaan Anda dalam 10 detik."

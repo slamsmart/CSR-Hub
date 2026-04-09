@@ -51,8 +51,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     return item.roles.includes(user.role);
   });
 
-  const initials = user?.full_name
-    ? user.full_name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+  const displayName = (user as any)?.name || (user as any)?.full_name || user?.email || "Pengguna";
+  const initials = displayName !== user?.email
+    ? displayName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
     : "?";
 
   const SidebarContent = () => (
@@ -103,7 +104,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="text-sidebar-foreground text-sm font-medium truncate">{user.full_name}</p>
+                  <p className="text-sidebar-foreground text-sm font-medium truncate">{displayName}</p>
                   <p className="text-sidebar-foreground/50 text-xs truncate">{user.email}</p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-sidebar-foreground/50 shrink-0" />

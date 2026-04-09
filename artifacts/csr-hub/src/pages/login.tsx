@@ -107,11 +107,17 @@ export default function LoginPage() {
                 Daftar sekarang
               </Link>
             </p>
-            <div className="text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2">
-              <p className="font-medium mb-1">Akun demo:</p>
-              <p>admin@csrhub.id / 123</p>
-              <p>perusahaan@bca.co.id / 123</p>
-              <p>ngo@komunitas.or.id / 123</p>
+            <div className="text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2 text-left">
+              <p className="font-medium mb-1.5 text-foreground">Akun demo (password: 123):</p>
+              <table className="w-full">
+                <tbody>
+                  <tr><td className="pr-2 font-mono">admin@csrhub.id</td><td className="text-muted-foreground/70">Admin</td></tr>
+                  <tr><td className="pr-2 font-mono">budi@pertamina.com</td><td className="text-muted-foreground/70">Perusahaan</td></tr>
+                  <tr><td className="pr-2 font-mono">ahmad@rumahzakat.org</td><td className="text-muted-foreground/70">NGO</td></tr>
+                  <tr><td className="pr-2 font-mono">verifikator@csrhub.id</td><td className="text-muted-foreground/70">Verifikator</td></tr>
+                  <tr><td className="pr-2 font-mono">auditor@csrhub.id</td><td className="text-muted-foreground/70">Auditor</td></tr>
+                </tbody>
+              </table>
             </div>
           </CardFooter>
         </Card>
