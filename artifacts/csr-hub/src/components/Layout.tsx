@@ -32,7 +32,7 @@ const navItems: NavItem[] = [
   { label: "Co-Funding", href: "/cofunding", icon: HandCoins, roles: ["super_admin","admin","perusahaan","donor"] },
   { label: "Leaderboard", href: "/leaderboard", icon: Trophy, roles: [] },
   { label: "Laporan GRI", href: "/sustainability", icon: FileBarChart, roles: ["super_admin","admin","perusahaan"] },
-  { label: "Laporan Dana CSR", href: "/reports/fund", icon: Receipt, roles: ["super_admin","admin","auditor","verifikator","ngo","komunitas","donor"] },
+  { label: "Laporan Dana CSR", href: "/reports/fund", icon: Receipt, roles: ["super_admin","admin","auditor","verifikator","ngo","komunitas","donor","perusahaan"] },
   { label: "Profil KYC", href: "/profile/kyc", icon: FileCheck, roles: ["perusahaan","ngo","komunitas","donor"] },
   { label: "Pengguna", href: "/users", icon: Users, roles: ["super_admin","admin"] },
   { label: "Audit Log", href: "/audit", icon: ClipboardList, roles: ["super_admin","admin","auditor"] },

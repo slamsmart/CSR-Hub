@@ -347,8 +347,9 @@ export default function FundReportPage() {
   const [uploading, setUploading] = useState(false);
   const [generatingTemplate, setGeneratingTemplate] = useState(false);
 
-  const isAdmin = ["super_admin", "admin", "auditor", "verifikator"].includes(user?.role ?? "");
-  const canUpload = isAuthenticated && !["super_admin", "admin"].includes(user?.role ?? "");
+  const canReview = ["super_admin", "admin", "auditor", "verifikator"].includes(user?.role ?? "");
+  const isPemberiDana = ["perusahaan", "donor"].includes(user?.role ?? "");
+  const canUpload = isAuthenticated && !["super_admin", "admin", "perusahaan", "donor"].includes(user?.role ?? "");
 
   const { data: reports = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/fund-reports"],
@@ -588,7 +589,16 @@ export default function FundReportPage() {
         )}
 
         {/* ── RIWAYAT TAB ── */}
-        <TabsContent value="riwayat" className="mt-4">
+        <TabsContent value="riwayat" className="mt-4 space-y-4">
+          {/* Banner info untuk pemberi dana */}
+          {isPemberiDana && (
+            <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+              <Building2 className="w-4 h-4 mt-0.5 shrink-0 text-blue-600" />
+              <div>
+                <span className="font-semibold">Akses Pemberi Dana:</span> Anda dapat melihat dan mengunduh semua laporan realisasi dana CSR yang dikirimkan oleh organisasi penerima. Klik tombol <strong>Unduh</strong> untuk mengunduh dokumen PDF laporan.
+              </div>
+            </div>
+          )}
           {isLoading ? (
             <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
               <Loader2 className="w-5 h-5 animate-spin" /> Memuat riwayat laporan...
@@ -597,7 +607,9 @@ export default function FundReportPage() {
             <Card>
               <CardContent className="py-16 text-center">
                 <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground">Belum ada laporan yang diunggah</p>
+                <p className="text-muted-foreground">
+                  {isPemberiDana ? "Belum ada laporan yang dikirimkan oleh penerima dana" : "Belum ada laporan yang diunggah"}
+                </p>
                 {canUpload && <p className="text-sm text-muted-foreground mt-1">Gunakan tab "Unggah Laporan" untuk mengirimkan laporan pertama Anda</p>}
               </CardContent>
             </Card>
@@ -647,7 +659,7 @@ export default function FundReportPage() {
                           onClick={() => handleDownloadReport(r.id, r.filename)}>
                           <Download className="w-3.5 h-3.5" /> Unduh
                         </Button>
-                        {isAdmin && r.status === "submitted" && (
+                        {canReview && r.status === "submitted" && (
                           <>
                             <Button size="sm" className="gap-1 text-xs h-8 bg-green-600 hover:bg-green-700"
                               onClick={() => reviewMutation.mutate({ id: r.id, status: "approved" })}>
@@ -662,7 +674,7 @@ export default function FundReportPage() {
                             </Button>
                           </>
                         )}
-                        {(!isAdmin || user?.role === "super_admin") && (
+                        {(!canReview || user?.role === "super_admin") && !isPemberiDana && (
                           <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                             onClick={() => {
                               if (confirm("Hapus laporan ini?")) deleteMutation.mutate(r.id);

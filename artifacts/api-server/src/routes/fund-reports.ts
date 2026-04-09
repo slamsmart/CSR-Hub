@@ -10,9 +10,10 @@ router.get("/api/fund-reports", authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
     const orgId = user.organizationId;
-    const isAdmin = ["super_admin", "admin", "auditor", "verifikator"].includes(user.role);
+    // Pemberi dana (perusahaan, donor) & admin/auditor/verifikator dapat melihat semua laporan
+    const canSeeAll = ["super_admin", "admin", "auditor", "verifikator", "perusahaan", "donor"].includes(user.role);
 
-    const reports = isAdmin
+    const reports = canSeeAll
       ? await db.select({
           id: fundReportsTable.id,
           projectId: fundReportsTable.projectId,
@@ -99,11 +100,12 @@ router.get("/api/fund-reports/:id/download", authenticate, async (req, res) => {
   try {
     const user = (req as any).user;
     const id = Number(req.params.id);
-    const isAdmin = ["super_admin", "admin", "auditor", "verifikator"].includes(user.role);
+    // Admin, auditor, verifikator, perusahaan, dan donor boleh mengunduh semua laporan
+    const canSeeAll = ["super_admin", "admin", "auditor", "verifikator", "perusahaan", "donor"].includes(user.role);
 
     const [report] = await db.select().from(fundReportsTable)
       .where(
-        isAdmin
+        canSeeAll
           ? eq(fundReportsTable.id, id)
           : and(eq(fundReportsTable.id, id), eq(fundReportsTable.organizationId, user.organizationId))
       );
