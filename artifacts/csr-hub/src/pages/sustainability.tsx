@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { customFetch, useListOrganizations } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,7 @@ import { formatRupiah } from "@/lib/utils";
 import {
   FileBarChart, Download, Building2, CheckCircle, Globe, Users,
   Leaf, Receipt, TrendingUp, Droplets, Trees, Wind, BookOpen,
-  Heart, Sparkles, Shield, ChevronRight
+  Heart, Sparkles, Shield, ChevronRight, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -58,9 +58,109 @@ function GRISection({ code, title, icon: Icon, color, children }: { code: string
 export default function SustainabilityPage() {
   const { user, isAuthenticated } = useAuth();
   const [selectedOrgId, setSelectedOrgId] = useState<string>("");
+  const [downloading, setDownloading] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const { data: orgsData } = useListOrganizations({ org_type: "perusahaan", limit: 50 });
   const orgs = (orgsData as any)?.data ?? [];
+
+  async function downloadPdf() {
+    if (!reportRef.current || !report) return;
+    setDownloading(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const jsPDF = (await import("jspdf")).jsPDF;
+
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pdfWidth - 20;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 10;
+
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight - 20;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight - 20;
+      }
+
+      const fileName = `Laporan_Keberlanjutan_${report.orgName?.replace(/\s+/g, "_")}_${report.reportYear}.pdf`;
+      pdf.save(fileName);
+      toast.success("PDF berhasil diunduh!");
+    } catch (err) {
+      console.error("PDF error:", err);
+      toast.error("Gagal mengunduh PDF. Coba lagi.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  async function downloadExcel() {
+    if (!report) return;
+    try {
+      const rows = [
+        ["Laporan Keberlanjutan GRI 2021", "", ""],
+        ["Perusahaan", report.orgName, ""],
+        ["Tahun", report.reportYear, ""],
+        ["Periode", report.reportPeriod, ""],
+        ["", "", ""],
+        ["RINGKASAN EKSEKUTIF", "", ""],
+        ["Total Program", report.summary?.totalProgramsSubmitted, ""],
+        ["Total Investasi CSR (Rp)", report.summary?.totalFundedRp, ""],
+        ["Total Penerima Manfaat", report.summary?.totalBeneficiaries, ""],
+        ["SDGs Dituju", (report.summary?.sdgGoalsAddressed ?? []).join(", "), ""],
+        ["", "", ""],
+        ["GRI 200 — EKONOMI", "", ""],
+        ["Total Investasi CSR", report.gri200?.totalInvestmentRp, ""],
+        ["Nilai Ekonomi Langsung", report.gri200?.directEconomicValue, ""],
+        ["Nilai Ekonomi Tidak Langsung", report.gri200?.indirectEconomicValue, ""],
+        ["Pemasok Lokal", `${report.gri200?.localSupplierPercentage}%`, ""],
+        ["", "", ""],
+        ["GRI 300 — LINGKUNGAN", "", ""],
+        ["CO₂ Dikurangi (ton)", report.gri300?.co2OffsetTons, ""],
+        ["Pohon Ditanam", report.gri300?.treesPlanted, ""],
+        ["Air Dihemat (liter)", report.gri300?.waterConservedLiters, ""],
+        ["", "", ""],
+        ["GRI 400 — SOSIAL", "", ""],
+        ["Total Penerima Manfaat", report.gri400?.totalBeneficiaries, ""],
+        ["Keterlibatan Komunitas", report.gri400?.communityEngagements, ""],
+        ["Jam Pelatihan", report.gri400?.trainingHours, ""],
+        ["Beasiswa Diberikan", report.gri400?.scholarshipsGiven, ""],
+        ["", "", ""],
+        ["DOKUMEN PAJAK", "", ""],
+        ["Nomor Dokumen", report.taxDocument?.documentNumber, ""],
+        ["Berlaku Sampai", report.taxDocument?.validUntil, ""],
+        ["Potongan Pajak (Rp)", report.taxDocument?.eligibleDeductionRp, ""],
+        ["Dasar Hukum", report.taxDocument?.legalBasis, ""],
+      ];
+      const csvContent = rows.map(r => r.map(c => `"${c ?? ""}"`).join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Laporan_GRI_${report.orgName?.replace(/\s+/g, "_")}_${report.reportYear}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("File Excel (CSV) berhasil diunduh!");
+    } catch {
+      toast.error("Gagal mengekspor file.");
+    }
+  }
 
   const orgId = selectedOrgId || (orgs[0]?.id ? String(orgs[0].id) : "1");
 
@@ -83,11 +183,12 @@ export default function SustainabilityPage() {
           <p className="text-muted-foreground text-sm">Format GRI 2021 Universal Standards — dibuat otomatis dari data platform</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => { toast.success("Laporan sedang dipersiapkan untuk diunduh"); }}>
-            <Download className="w-4 h-4 mr-1.5" />Unduh PDF
+          <Button variant="outline" size="sm" onClick={downloadPdf} disabled={downloading || !report}>
+            {downloading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Download className="w-4 h-4 mr-1.5" />}
+            {downloading ? "Membuat PDF..." : "Unduh PDF"}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => { toast.success("Ekspor Excel berhasil"); }}>
-            Ekspor Excel
+          <Button variant="outline" size="sm" onClick={downloadExcel} disabled={!report}>
+            <Download className="w-4 h-4 mr-1.5" />Ekspor CSV/Excel
           </Button>
         </div>
       </div>
@@ -115,7 +216,7 @@ export default function SustainabilityPage() {
           <p className="text-muted-foreground">Pilih perusahaan untuk melihat laporan</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6" ref={reportRef}>
 
           {/* Cover */}
           <Card className="bg-gradient-to-br from-green-700 to-teal-800 text-white overflow-hidden">

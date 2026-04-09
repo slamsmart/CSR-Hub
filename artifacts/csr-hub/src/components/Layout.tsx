@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, FileText, Building2, FolderKanban, HandCoins,
   ClipboardList, Bell, LogOut, Menu, X, ChevronDown, Users, Leaf,
-  Trophy, FileBarChart,
+  Trophy, FileBarChart, FileCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -32,6 +32,7 @@ const navItems: NavItem[] = [
   { label: "Co-Funding", href: "/cofunding", icon: HandCoins, roles: ["super_admin","admin","perusahaan","donor"] },
   { label: "Leaderboard", href: "/leaderboard", icon: Trophy, roles: [] },
   { label: "Laporan GRI", href: "/sustainability", icon: FileBarChart, roles: ["super_admin","admin","perusahaan"] },
+  { label: "Profil KYC", href: "/profile/kyc", icon: FileCheck, roles: ["perusahaan","ngo","komunitas","donor"] },
   { label: "Pengguna", href: "/users", icon: Users, roles: ["super_admin","admin"] },
   { label: "Audit Log", href: "/audit", icon: ClipboardList, roles: ["super_admin","admin","auditor"] },
 ];

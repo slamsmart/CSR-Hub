@@ -20,6 +20,7 @@ import AuditPage from "@/pages/audit";
 import UsersPage from "@/pages/users";
 import LeaderboardPage from "@/pages/leaderboard";
 import SustainabilityPage from "@/pages/sustainability";
+import ProfileKYCPage from "@/pages/profile-kyc";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -53,6 +54,7 @@ function AppRouter() {
             <Route path="/notifications" component={NotificationsPage} />
             <Route path="/leaderboard" component={LeaderboardPage} />
             <Route path="/sustainability" component={SustainabilityPage} />
+            <Route path="/profile/kyc" component={ProfileKYCPage} />
             <Route path="/audit" component={AuditPage} />
             <Route path="/users" component={UsersPage} />
             <Route component={NotFound} />

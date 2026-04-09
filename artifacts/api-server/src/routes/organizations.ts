@@ -17,6 +17,7 @@ function formatOrg(org: typeof organizationsTable.$inferSelect) {
     id: org.id,
     name: org.name,
     type: org.type,
+    orgType: org.type,
     description: org.description,
     logoUrl: org.logoUrl,
     website: org.website,
@@ -26,6 +27,16 @@ function formatOrg(org: typeof organizationsTable.$inferSelect) {
     phone: org.phone,
     email: org.email,
     npwp: org.npwp,
+    nib: org.nib,
+    skKemenkumham: org.skKemenkumham,
+    legalEntityType: org.legalEntityType,
+    foundingYear: org.foundingYear,
+    directorName: org.directorName,
+    contactPersonName: org.contactPersonName,
+    contactPersonPhone: org.contactPersonPhone,
+    bankName: org.bankName,
+    bankAccountNumber: org.bankAccountNumber,
+    bankAccountName: org.bankAccountName,
     legalStatus: org.legalStatus,
     verificationStatus: org.verificationStatus,
     trustScore: org.trustScore,
@@ -125,6 +136,17 @@ router.patch("/organizations/:id", authenticate, async (req, res): Promise<void>
   if (parsed.data.email != null) updateData.email = parsed.data.email;
   if (parsed.data.focusAreas != null) updateData.focusAreas = parsed.data.focusAreas;
   if (parsed.data.sdgGoals != null) updateData.sdgGoals = parsed.data.sdgGoals;
+  if ((parsed.data as any).npwp != null) updateData.npwp = (parsed.data as any).npwp;
+  if ((parsed.data as any).nib != null) updateData.nib = (parsed.data as any).nib;
+  if ((parsed.data as any).skKemenkumham != null) updateData.skKemenkumham = (parsed.data as any).skKemenkumham;
+  if ((parsed.data as any).legalEntityType != null) updateData.legalEntityType = (parsed.data as any).legalEntityType;
+  if ((parsed.data as any).foundingYear != null) updateData.foundingYear = (parsed.data as any).foundingYear;
+  if ((parsed.data as any).directorName != null) updateData.directorName = (parsed.data as any).directorName;
+  if ((parsed.data as any).contactPersonName != null) updateData.contactPersonName = (parsed.data as any).contactPersonName;
+  if ((parsed.data as any).contactPersonPhone != null) updateData.contactPersonPhone = (parsed.data as any).contactPersonPhone;
+  if ((parsed.data as any).bankName != null) updateData.bankName = (parsed.data as any).bankName;
+  if ((parsed.data as any).bankAccountNumber != null) updateData.bankAccountNumber = (parsed.data as any).bankAccountNumber;
+  if ((parsed.data as any).bankAccountName != null) updateData.bankAccountName = (parsed.data as any).bankAccountName;
 
   const [org] = await db.update(organizationsTable).set(updateData).where(eq(organizationsTable.id, id)).returning();
   if (!org) {
