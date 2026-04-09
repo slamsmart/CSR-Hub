@@ -18,6 +18,8 @@ import CofundingPage from "@/pages/cofunding/index";
 import NotificationsPage from "@/pages/notifications";
 import AuditPage from "@/pages/audit";
 import UsersPage from "@/pages/users";
+import LeaderboardPage from "@/pages/leaderboard";
+import SustainabilityPage from "@/pages/sustainability";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -49,6 +51,8 @@ function AppRouter() {
             <Route path="/projects" component={ProjectsPage} />
             <Route path="/cofunding" component={CofundingPage} />
             <Route path="/notifications" component={NotificationsPage} />
+            <Route path="/leaderboard" component={LeaderboardPage} />
+            <Route path="/sustainability" component={SustainabilityPage} />
             <Route path="/audit" component={AuditPage} />
             <Route path="/users" component={UsersPage} />
             <Route component={NotFound} />
