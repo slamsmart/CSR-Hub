@@ -84,10 +84,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               href={item.href}
               onClick={() => setSidebarOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
                 active
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  ? "bg-[#14532D] text-[#4ADE80]"
+                  : "text-[#9CA3AF] hover:bg-[#0B1220] hover:text-[#E5E7EB]"
               )}
             >
               <Icon className="w-4 h-4 shrink-0" />

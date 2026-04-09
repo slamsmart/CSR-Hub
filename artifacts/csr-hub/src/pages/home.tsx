@@ -92,23 +92,21 @@ export default function HomePage() {
     <div className="min-h-screen">
 
       {/* ── HERO ── */}
-      <section className="bg-gradient-to-br from-sidebar via-sidebar/90 to-sidebar/70 text-white py-20 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          {Array.from({ length: 20 }).map((_, i) => (
-            <div key={i} className="absolute rounded-full bg-white" style={{
-              width: Math.random() * 80 + 20, height: Math.random() * 80 + 20,
-              top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`,
-              opacity: Math.random() * 0.5,
-            }} />
-          ))}
-        </div>
+      <section className="text-white py-20 px-6 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0F172A 0%, #022C22 100%)" }}>
+        {/* Subtle grid overlay */}
+        <div className="absolute inset-0 opacity-[0.04]" style={{
+          backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
+          backgroundSize: "40px 40px"
+        }} />
+        {/* Glow accent */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full opacity-10 blur-3xl" style={{ background: "#16A34A" }} />
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm mb-6 border border-white/20">
-            <Leaf className="w-4 h-4" />
+          <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm mb-6 border border-white/15 backdrop-blur-sm">
+            <Leaf className="w-4 h-4 text-[#22C55E]" />
             <span>Platform CSR Strategis Terpercaya di Indonesia</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-            Dari Kewajiban CSR<br />Menjadi <span className="text-green-300">Keunggulan Kompetitif</span>
+            Dari Kewajiban CSR<br />Menjadi <span className="text-[#4ADE80]">Keunggulan Kompetitif</span>
           </h1>
           <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
             CSR Hub mempertemukan perusahaan dengan NGO teraudit untuk program CSR yang terukur —
@@ -187,7 +185,7 @@ export default function HomePage() {
       </section>
 
       {/* ── AI MATCHING SHOWCASE ── */}
-      <section className="py-14 px-6 bg-gradient-to-r from-primary/5 to-teal-50">
+      <section className="py-14 px-6 bg-muted/40 border-y border-border">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div>
@@ -261,7 +259,7 @@ export default function HomePage() {
             <div className="grid sm:grid-cols-3 gap-4">
               {top3.map((company: any) => (
                 <Card key={company.id} className="relative overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-teal-400" />
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#16A34A] to-[#22C55E]" />
                   <CardContent className="p-5 text-center">
                     <div className="relative inline-block mb-3">
                       <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
@@ -295,7 +293,7 @@ export default function HomePage() {
       )}
 
       {/* ── GRI REPORT TEASER ── */}
-      <section className="py-14 px-6 bg-gradient-to-br from-green-50 to-teal-50">
+      <section className="py-14 px-6 bg-card border-y border-border">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div className="bg-white rounded-2xl border border-border p-6 shadow-md">
