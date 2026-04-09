@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { customFetch, useListOrganizations } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -59,54 +59,380 @@ export default function SustainabilityPage() {
   const { user, isAuthenticated } = useAuth();
   const [selectedOrgId, setSelectedOrgId] = useState<string>("");
   const [downloading, setDownloading] = useState(false);
-  const reportRef = useRef<HTMLDivElement>(null);
 
   const { data: orgsData } = useListOrganizations({ org_type: "perusahaan", limit: 50 });
   const orgs = (orgsData as any)?.data ?? [];
 
   async function downloadPdf() {
-    if (!reportRef.current || !report) return;
+    if (!report) return;
     setDownloading(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const jsPDF = (await import("jspdf")).jsPDF;
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const W = 210; const M = 15; const CW = W - M * 2;
+      let y = 0;
 
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
+      const addPage = () => { pdf.addPage(); y = 15; };
+      const checkY = (need: number) => { if (y + need > 275) addPage(); };
+
+      // ── COVER ──────────────────────────────────────────────────────────
+      pdf.setFillColor(22, 101, 52);
+      pdf.rect(0, 0, W, 55, "F");
+      pdf.setFillColor(255, 255, 255, 0.1);
+
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "normal");
+      pdf.text("LAPORAN KEBERLANJUTAN — GRI 2021 UNIVERSAL STANDARDS", M, 14);
+
+      pdf.setFontSize(18);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(report.orgName ?? "Perusahaan", M, 27);
+
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Periode: ${report.reportPeriod ?? ""}`, M, 35);
+      pdf.text(`Diterbitkan: ${new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}`, M, 41);
+      pdf.text(`Trust Score: ${report.summary?.trustScore ?? 0} / 100`, M, 47);
+
+      y = 65;
+
+      // ── RINGKASAN EKSEKUTIF ─────────────────────────────────────────────
+      pdf.setTextColor(22, 101, 52);
+      pdf.setFontSize(11);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("RINGKASAN EKSEKUTIF", M, y); y += 7;
+
+      pdf.setDrawColor(22, 101, 52);
+      pdf.line(M, y, M + CW, y); y += 5;
+
+      const summaryRows = [
+        ["Total Program CSR", `${report.summary?.totalProgramsSubmitted ?? 0} program`],
+        ["Total Investasi CSR", formatRupiah(report.summary?.totalFundedRp ?? 0)],
+        ["Total Penerima Manfaat", `${(report.summary?.totalBeneficiaries ?? 0).toLocaleString("id-ID")} orang`],
+        ["SDGs yang Dituju", (report.summary?.sdgGoalsAddressed ?? []).join(", ") || "-"],
+        ["Fokus Kategori", (report.summary?.focusCategories ?? []).join(", ") || "-"],
+        ["Status Verifikasi", report.summary?.verificationStatus ?? "-"],
+      ];
+
+      pdf.setFontSize(9);
+      summaryRows.forEach(([label, value]) => {
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(80, 80, 80);
+        pdf.text(label, M, y);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(20, 20, 20);
+        pdf.text(String(value), M + 65, y);
+        y += 6;
       });
 
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      y += 5;
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth - 20;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      // ── GRI 200 — EKONOMI ───────────────────────────────────────────────
+      checkY(50);
+      pdf.setFillColor(239, 246, 255);
+      pdf.rect(M, y, CW, 7, "F");
+      pdf.setTextColor(29, 78, 216);
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("GRI 200 — PENGUNGKAPAN EKONOMI", M + 2, y + 5); y += 11;
 
-      let heightLeft = imgHeight;
-      let position = 10;
+      const ecoRows = [
+        ["GRI 201-1  Total Investasi CSR", formatRupiah(report.gri200?.totalInvestmentRp ?? 0)],
+        ["GRI 201-1  Nilai Ekonomi Langsung", formatRupiah(report.gri200?.directEconomicValue ?? 0)],
+        ["GRI 201-1  Nilai Ekonomi Tidak Langsung", formatRupiah(report.gri200?.indirectEconomicValue ?? 0)],
+        ["GRI 204-1  Pemasok Lokal", `${report.gri200?.localSupplierPercentage ?? 0}%`],
+      ];
+      pdf.setFontSize(9);
+      ecoRows.forEach(([label, value]) => {
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(60, 60, 60);
+        pdf.text(label, M + 2, y);
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(20, 20, 20);
+        pdf.text(String(value), M + 110, y, { align: "right" });
+        pdf.setDrawColor(220, 220, 220);
+        pdf.line(M, y + 2, M + CW, y + 2);
+        y += 7;
+      });
 
-      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight - 20;
+      y += 4;
 
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight + 10;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight - 20;
+      // ── GRI 300 — LINGKUNGAN ────────────────────────────────────────────
+      checkY(50);
+      pdf.setFillColor(236, 252, 243);
+      pdf.rect(M, y, CW, 7, "F");
+      pdf.setTextColor(21, 128, 61);
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("GRI 300 — PENGUNGKAPAN LINGKUNGAN", M + 2, y + 5); y += 11;
+
+      const envRows = [
+        ["GRI 302 / 305  CO₂ Dikurangi", `${report.gri300?.co2OffsetTons ?? 0} ton`],
+        ["GRI 304  Pohon Ditanam", `${(report.gri300?.treesPlanted ?? 0).toLocaleString("id-ID")} pohon`],
+        ["GRI 303  Air Dihemat", `${((report.gri300?.waterConservedLiters ?? 0) / 1000).toFixed(0)} m³`],
+      ];
+      pdf.setFontSize(9);
+      envRows.forEach(([label, value]) => {
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(60, 60, 60);
+        pdf.text(label, M + 2, y);
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(20, 20, 20);
+        pdf.text(String(value), M + 110, y, { align: "right" });
+        pdf.setDrawColor(220, 220, 220);
+        pdf.line(M, y + 2, M + CW, y + 2);
+        y += 7;
+      });
+
+      y += 4;
+
+      // ── GRI 400 — SOSIAL ────────────────────────────────────────────────
+      checkY(55);
+      pdf.setFillColor(245, 240, 255);
+      pdf.rect(M, y, CW, 7, "F");
+      pdf.setTextColor(109, 40, 217);
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("GRI 400 — PENGUNGKAPAN SOSIAL", M + 2, y + 5); y += 11;
+
+      const socialRows = [
+        ["GRI 413-1  Total Penerima Manfaat", `${(report.gri400?.totalBeneficiaries ?? 0).toLocaleString("id-ID")} orang`],
+        ["GRI 413-1  Keterlibatan Komunitas", `${report.gri400?.communityEngagements ?? 0} kali`],
+        ["GRI 404-1  Jam Pelatihan", `${report.gri400?.trainingHours ?? 0} jam`],
+        ["GRI 413-1  Beasiswa Diberikan", `${(report.gri400?.scholarshipsGiven ?? 0).toLocaleString("id-ID")} penerima`],
+      ];
+      pdf.setFontSize(9);
+      socialRows.forEach(([label, value]) => {
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(60, 60, 60);
+        pdf.text(label, M + 2, y);
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(20, 20, 20);
+        pdf.text(String(value), M + 110, y, { align: "right" });
+        pdf.setDrawColor(220, 220, 220);
+        pdf.line(M, y + 2, M + CW, y + 2);
+        y += 7;
+      });
+
+      y += 8;
+
+      // ── FOOTER ──────────────────────────────────────────────────────────
+      checkY(20);
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(M, y, M + CW, y); y += 5;
+      pdf.setFontSize(7);
+      pdf.setFont("helvetica", "italic");
+      pdf.setTextColor(130, 130, 130);
+      pdf.text("Laporan ini disusun otomatis dari data aktivitas CSR yang tercatat di platform CSR Hub.", M, y); y += 4;
+      pdf.text("Mengacu pada GRI 2021 Universal Standards yang diakui secara internasional.", M, y); y += 4;
+      pdf.text(`Dokumen ini digenerate pada: ${new Date().toLocaleString("id-ID")}`, M, y);
+
+      // ── Nomor halaman ───────────────────────────────────────────────────
+      const pageCount = (pdf as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(7);
+        pdf.setTextColor(160, 160, 160);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(`Halaman ${i} dari ${pageCount}  |  CSR Hub — Platform CSR Indonesia`, W / 2, 290, { align: "center" });
       }
 
-      const fileName = `Laporan_Keberlanjutan_${report.orgName?.replace(/\s+/g, "_")}_${report.reportYear}.pdf`;
-      pdf.save(fileName);
-      toast.success("PDF berhasil diunduh!");
+      pdf.save(`Laporan_GRI_${report.orgName?.replace(/\s+/g, "_")}_${report.reportYear}.pdf`);
+      toast.success("Laporan GRI berhasil diunduh!");
     } catch (err) {
       console.error("PDF error:", err);
-      toast.error("Gagal mengunduh PDF. Coba lagi.");
+      toast.error("Gagal membuat PDF. Coba lagi.");
     } finally {
       setDownloading(false);
+    }
+  }
+
+  async function downloadTaxDocument() {
+    if (!report) return;
+    try {
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const W = 210; const M = 20; const CW = W - M * 2;
+      let y = 20;
+
+      // ── KOP SURAT ───────────────────────────────────────────────────────
+      pdf.setFillColor(22, 101, 52);
+      pdf.rect(0, 0, W, 35, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("CSR HUB", W / 2, 14, { align: "center" });
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.text("Platform CSR Strategis Indonesia  |  csrhub.id", W / 2, 20, { align: "center" });
+      pdf.text("Jl. Sudirman No. 1, Jakarta Pusat 10220  |  info@csrhub.id", W / 2, 26, { align: "center" });
+
+      y = 45;
+
+      // ── JUDUL DOKUMEN ───────────────────────────────────────────────────
+      pdf.setTextColor(20, 20, 20);
+      pdf.setFontSize(13);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("BUKTI POTONGAN PAJAK CSR", W / 2, y, { align: "center" }); y += 6;
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(80, 80, 80);
+      pdf.text("Sesuai PP No. 93 Tahun 2010 & PMK No. 92 Tahun 2020", W / 2, y, { align: "center" }); y += 3;
+
+      pdf.setDrawColor(22, 101, 52);
+      pdf.setLineWidth(0.8);
+      pdf.line(M, y, M + CW, y); y += 8;
+      pdf.setLineWidth(0.3);
+
+      // ── INFO DOKUMEN ─────────────────────────────────────────────────────
+      pdf.setFontSize(9);
+      const docInfo = [
+        ["Nomor Dokumen", ": " + (report.taxDocument?.documentNumber ?? "-")],
+        ["Tanggal Terbit", ": " + new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })],
+        ["Berlaku Sampai", ": " + (report.taxDocument?.validUntil ?? "-")],
+        ["Dasar Hukum", ": " + (report.taxDocument?.legalBasis ?? "-")],
+      ];
+      docInfo.forEach(([label, value]) => {
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(60, 60, 60);
+        pdf.text(label, M, y);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(20, 20, 20);
+        pdf.text(value, M + 45, y);
+        y += 7;
+      });
+
+      y += 5;
+
+      // ── DATA PERUSAHAAN ─────────────────────────────────────────────────
+      pdf.setFillColor(248, 250, 252);
+      pdf.rect(M, y, CW, 7, "F");
+      pdf.setTextColor(22, 101, 52);
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("DATA WAJIB PAJAK / PERUSAHAAN", M + 2, y + 5); y += 12;
+
+      const companyData = [
+        ["Nama Perusahaan", report.orgName ?? "-"],
+        ["Tahun Pajak", String(report.reportYear ?? new Date().getFullYear())],
+        ["Periode Program CSR", report.reportPeriod ?? "-"],
+        ["Jumlah Program CSR", `${report.summary?.totalProgramsSubmitted ?? 0} program`],
+      ];
+      pdf.setFontSize(9);
+      companyData.forEach(([label, value]) => {
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(80, 80, 80);
+        pdf.text(label, M, y);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(20, 20, 20);
+        pdf.text(value, M + 55, y);
+        pdf.setDrawColor(230, 230, 230);
+        pdf.line(M, y + 2, M + CW, y + 2);
+        y += 8;
+      });
+
+      y += 4;
+
+      // ── RINCIAN POTONGAN PAJAK ──────────────────────────────────────────
+      pdf.setFillColor(248, 250, 252);
+      pdf.rect(M, y, CW, 7, "F");
+      pdf.setTextColor(22, 101, 52);
+      pdf.setFontSize(10);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("RINCIAN POTONGAN PAJAK", M + 2, y + 5); y += 12;
+
+      const taxRows = [
+        ["Total Investasi CSR yang Diakui", formatRupiah(report.summary?.totalFundedRp ?? 0)],
+        ["Persentase Potongan yang Diperkenankan", "50% dari total investasi CSR"],
+        ["Nilai Potongan Pajak yang Dapat Diklaim", formatRupiah(report.taxDocument?.eligibleDeductionRp ?? 0)],
+      ];
+
+      pdf.setFontSize(9);
+      taxRows.forEach(([label, value], idx) => {
+        const isFinal = idx === taxRows.length - 1;
+        if (isFinal) {
+          pdf.setFillColor(236, 252, 243);
+          pdf.rect(M, y - 4, CW, 10, "F");
+          pdf.setTextColor(22, 101, 52);
+        } else {
+          pdf.setTextColor(60, 60, 60);
+        }
+        pdf.setFont("helvetica", isFinal ? "bold" : "normal");
+        pdf.text(label, M + 2, y);
+        pdf.setFont("helvetica", "bold");
+        pdf.text(value, M + CW - 2, y, { align: "right" });
+        if (!isFinal) {
+          pdf.setDrawColor(220, 220, 220);
+          pdf.line(M, y + 2, M + CW, y + 2);
+        }
+        y += 10;
+      });
+
+      y += 8;
+
+      // ── BOX NILAI KLAIM ─────────────────────────────────────────────────
+      pdf.setFillColor(22, 101, 52);
+      pdf.roundedRect(M, y, CW, 22, 3, 3, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "normal");
+      pdf.text("TOTAL POTONGAN PAJAK CSR YANG DAPAT DIKLAIM", W / 2, y + 7, { align: "center" });
+      pdf.setFontSize(18);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(formatRupiah(report.taxDocument?.eligibleDeductionRp ?? 0), W / 2, y + 17, { align: "center" });
+      y += 30;
+
+      // ── CATATAN ─────────────────────────────────────────────────────────
+      pdf.setTextColor(80, 80, 80);
+      pdf.setFontSize(7.5);
+      pdf.setFont("helvetica", "italic");
+      const notes = [
+        "* Dokumen ini merupakan bukti potongan pajak penghasilan atas sumbangan yang dapat dikurangkan sesuai",
+        "  Peraturan Pemerintah Nomor 93 Tahun 2010 tentang Sumbangan Penanggulangan Bencana Nasional.",
+        "* Potongan dihitung berdasarkan 50% dari total investasi CSR yang tersalurkan melalui program terverifikasi.",
+        "* Untuk pengakuan perpajakan, lampirkan dokumen ini pada SPT Tahunan Badan.",
+      ];
+      notes.forEach(note => { pdf.text(note, M, y); y += 5; });
+
+      y += 5;
+
+      // ── TANDA TANGAN ─────────────────────────────────────────────────────
+      pdf.setDrawColor(22, 101, 52);
+      pdf.line(M, y, M + CW, y); y += 8;
+
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(80, 80, 80);
+      pdf.text("Diterbitkan oleh:", M, y); y += 5;
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(20, 20, 20);
+      pdf.text("CSR Hub — Platform CSR Strategis Indonesia", M, y); y += 5;
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(80, 80, 80);
+      pdf.text(`Jakarta, ${new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}`, M, y);
+
+      // Cap/stempel simulasi
+      pdf.setDrawColor(22, 101, 52);
+      pdf.setLineWidth(0.4);
+      pdf.circle(W - M - 18, y - 10, 15);
+      pdf.setFontSize(6);
+      pdf.setTextColor(22, 101, 52);
+      pdf.text("DOKUMEN", W - M - 18, y - 12, { align: "center" });
+      pdf.text("RESMI", W - M - 18, y - 8, { align: "center" });
+      pdf.text("CSR HUB", W - M - 18, y - 4, { align: "center" });
+
+      // Nomor halaman
+      pdf.setFontSize(7);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(160, 160, 160);
+      pdf.text(`Halaman 1 dari 1  |  CSR Hub — ${report.taxDocument?.documentNumber}`, W / 2, 290, { align: "center" });
+
+      pdf.save(`Dokumen_Pajak_CSR_${report.orgName?.replace(/\s+/g, "_")}_${report.reportYear}.pdf`);
+      toast.success("Dokumen pajak berhasil diunduh!");
+    } catch (err) {
+      console.error("Tax PDF error:", err);
+      toast.error("Gagal mengunduh dokumen pajak. Coba lagi.");
     }
   }
 
@@ -216,7 +542,7 @@ export default function SustainabilityPage() {
           <p className="text-muted-foreground">Pilih perusahaan untuk melihat laporan</p>
         </div>
       ) : (
-        <div className="space-y-6" ref={reportRef}>
+        <div className="space-y-6">
 
           {/* Cover */}
           <Card className="bg-gradient-to-br from-green-700 to-teal-800 text-white overflow-hidden">
@@ -331,8 +657,8 @@ export default function SustainabilityPage() {
                   <p className="text-xs text-muted-foreground">Dokumen Resmi</p>
                   <CardTitle className="text-sm">Bukti Potongan Pajak CSR</CardTitle>
                 </div>
-                <Button size="sm" variant="outline" className="ml-auto border-amber-400 text-amber-700 hover:bg-amber-100" onClick={() => toast.success("Dokumen pajak sedang diunduh...")}>
-                  <Download className="w-3.5 h-3.5 mr-1" />Unduh
+                <Button size="sm" variant="outline" className="ml-auto border-amber-400 text-amber-700 hover:bg-amber-100" onClick={downloadTaxDocument}>
+                  <Download className="w-3.5 h-3.5 mr-1" />Unduh PDF
                 </Button>
               </div>
             </CardHeader>
