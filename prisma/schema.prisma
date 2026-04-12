@@ -1,0 +1,1010 @@
+// CSR Hub - Prisma Schema
+// Platform Marketplace CSR Nasional
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUM DEFINITIONS
+// ============================================================
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN_PLATFORM
+  VERIFIKATOR
+  AUDITOR
+  PERUSAHAAN
+  PENGUSUL       // NGO, Komunitas, Sekolah, Koperasi, Yayasan, Startup Sosial
+  DONOR_KOLABORATOR
+  PUBLIC
+}
+
+enum OrgType {
+  PERUSAHAAN
+  NGO
+  KOMUNITAS
+  SEKOLAH
+  KOPERASI
+  YAYASAN
+  STARTUP_SOSIAL
+  PEMERINTAH
+  LAINNYA
+}
+
+enum VerificationStatus {
+  BELUM_DIAJUKAN
+  MENUNGGU_REVIEW
+  DALAM_REVIEW
+  MEMBUTUHKAN_DOKUMEN_TAMBAHAN
+  TERVERIFIKASI
+  DITOLAK
+  DICABUT
+}
+
+enum ProposalStatus {
+  DRAFT
+  DIKIRIM
+  DALAM_REVIEW
+  MEMBUTUHKAN_REVISI
+  DISETUJUI
+  DITOLAK
+  DIDANAI
+  BERJALAN
+  SELESAI
+  DIBATALKAN
+}
+
+enum ProposalCategory {
+  PENDIDIKAN
+  LINGKUNGAN_HIDUP
+  EKONOMI_PEMBERDAYAAN
+  KESEHATAN_MASYARAKAT
+  INFRASTRUKTUR_SOSIAL
+  PEMBERDAYAAN_PEREMPUAN
+  PENGEMBANGAN_UMKM
+  KEBENCANAAN_DAN_KEMANUSIAAN
+  SENI_DAN_BUDAYA
+  OLAHRAGA_DAN_KEPEMUDAAN
+  TEKNOLOGI_DAN_INOVASI
+  PERTANIAN_DAN_PANGAN
+  LAINNYA
+}
+
+enum SDGCategory {
+  SDG1_TANPA_KEMISKINAN
+  SDG2_TANPA_KELAPARAN
+  SDG3_KESEHATAN_BAIK
+  SDG4_PENDIDIKAN_BERKUALITAS
+  SDG5_KESETARAAN_GENDER
+  SDG6_AIR_BERSIH_SANITASI
+  SDG7_ENERGI_BERSIH
+  SDG8_PEKERJAAN_LAYAK
+  SDG9_INDUSTRI_INOVASI
+  SDG10_BERKURANGNYA_KESENJANGAN
+  SDG11_KOTA_KOMUNITAS_BERKELANJUTAN
+  SDG12_KONSUMSI_PRODUKSI_BERTANGGUNG_JAWAB
+  SDG13_PENANGANAN_PERUBAHAN_IKLIM
+  SDG14_KEHIDUPAN_BAWAH_LAUT
+  SDG15_KEHIDUPAN_DI_DARAT
+  SDG16_PERDAMAIAN_KEADILAN
+  SDG17_KEMITRAAN_UNTUK_TUJUAN
+}
+
+enum FundingStatus {
+  MENUNGGU_KONFIRMASI
+  DIKONFIRMASI
+  DIBATALKAN
+  DICAIRKAN
+  SELESAI
+}
+
+enum ProjectStatus {
+  BELUM_DIMULAI
+  BERJALAN
+  TERTUNDA
+  SELESAI
+  DIBATALKAN
+}
+
+enum NotificationType {
+  PROPOSAL_DIKIRIM
+  PROPOSAL_DISETUJUI
+  PROPOSAL_DITOLAK
+  PROPOSAL_REVISI
+  PROPOSAL_DIDANAI
+  VERIFIKASI_DIAJUKAN
+  VERIFIKASI_SELESAI
+  PROYEK_UPDATE
+  PROYEK_SELESAI
+  DANA_DIKONFIRMASI
+  PESAN_BARU
+  AUDIT_SCHEDULED
+  LAPORAN_TERSEDIA
+  SISTEM_INFO
+  RISK_ALERT
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  VIEW_SENSITIVE
+  DOWNLOAD
+  APPROVE
+  REJECT
+  VERIFY
+  FLAG
+  UNFLAG
+}
+
+enum RiskLevel {
+  RENDAH
+  SEDANG
+  TINGGI
+  KRITIS
+}
+
+// ============================================================
+// USER & AUTH
+// ============================================================
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  emailVerified     DateTime?
+  emailVerifyToken  String?   @unique
+  name              String
+  password          String?   // hashed
+  image             String?
+  role              UserRole  @default(PUBLIC)
+  phone             String?
+  isActive          Boolean   @default(true)
+  isSuspended       Boolean   @default(false)
+  suspendReason     String?
+  twoFactorEnabled  Boolean   @default(false)
+  twoFactorSecret   String?   // encrypted
+  lastLoginAt       DateTime?
+  lastLoginIp       String?
+  loginAttempts     Int       @default(0)
+  lockedUntil       DateTime?
+  passwordChangedAt DateTime?
+  mustChangePassword Boolean  @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  accounts          Account[]
+  organization      OrganizationMember[]
+  sessions          Session[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+  sentMessages      Message[]           @relation("MessageSender")
+  receivedMessages  Message[]           @relation("MessageReceiver")
+  proposals         Proposal[]          @relation("ProposalCreator")
+  reviewedProposals Proposal[]          @relation("ProposalReviewer")
+  verifications     VerificationReview[]
+  auditReports      AuditReport[]
+  loginHistory      LoginHistory[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  ipAddress    String?
+  userAgent    String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model LoginHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  ipAddress String?
+  userAgent String?
+  location  String?
+  success   Boolean
+  reason    String?  // for failed attempts
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("login_history")
+}
+
+// ============================================================
+// ORGANIZATION
+// ============================================================
+
+model Organization {
+  id                  String             @id @default(cuid())
+  name                String
+  slug                String             @unique
+  type                OrgType
+  description         String?            @db.Text
+  mission             String?            @db.Text
+  vision              String?            @db.Text
+  foundedYear         Int?
+  logo                String?
+  coverImage          String?
+  website             String?
+  email               String?
+  phone               String?
+
+  // Address
+  address             String?
+  provinsi            String?
+  kabupatenKota       String?
+  kecamatan           String?
+  kelurahan           String?
+  kodePos             String?
+  latitude            Float?
+  longitude           Float?
+
+  // Legal
+  nomorAkta           String?
+  nomorNPWP           String?
+  nomorIzin           String?
+  nomorSKKemenkumham  String?
+
+  // Verification
+  verificationStatus  VerificationStatus @default(BELUM_DIAJUKAN)
+  verifiedAt          DateTime?
+  verifiedBy          String?
+  trustScore          Float              @default(0)
+  isPublic            Boolean            @default(true)
+  isFeatured          Boolean            @default(false)
+
+  // Stats (denormalized for performance)
+  totalProposals      Int                @default(0)
+  approvedProposals   Int                @default(0)
+  totalFundingReceived BigInt            @default(0)
+  totalBeneficiaries  Int                @default(0)
+  projectSuccessRate  Float              @default(0)
+
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  // Relations
+  members             OrganizationMember[]
+  documents           VerificationDocument[]
+  proposals           Proposal[]
+  companyProfile      CompanyProfile?
+  ngoProfile          NGOProfile?
+  trustScoreHistory   TrustScore[]
+  fraudFlags          FraudFlag[]
+  coFundingParticipations CoFundingParticipant[]
+
+  @@index([slug])
+  @@index([type])
+  @@index([verificationStatus])
+  @@index([provinsi])
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  role           String       // OWNER, ADMIN, MEMBER, VIEWER
+  isActive       Boolean      @default(true)
+  joinedAt       DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("organization_members")
+}
+
+model CompanyProfile {
+  id                   String       @id @default(cuid())
+  organizationId       String       @unique
+  industri             String?
+  ukuranPerusahaan     String?      // MIKRO, KECIL, MENENGAH, BESAR, TBKP
+  jumlahKaryawan       Int?
+  pendapatanTahunan    String?
+  anggaranCSRTahunan   BigInt?
+
+  // CSR Focus
+  fokusCSR             ProposalCategory[]
+  targetSDGs           SDGCategory[]
+  wilayahFokus         String[]     // provinsi/kabupaten
+
+  // Criteria
+  budgetMinimum        BigInt?
+  budgetMaksimum       BigInt?
+  kategoriFokus        ProposalCategory[]
+  jenisOrganisasiDipilih OrgType[]
+  targetDampakMinimum  Int?
+
+  // Contact CSR
+  namaPICCSR           String?
+  emailPICCSR          String?
+  teleponPICCSR        String?
+  jabatanPICCSR        String?
+
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("company_profiles")
+}
+
+model NGOProfile {
+  id                String       @id @default(cuid())
+  organizationId    String       @unique
+  kategoriUtama     ProposalCategory[]
+  targetSDGs        SDGCategory[]
+  wilayahKerja      String[]
+  jumlahAnggota     Int?
+  jumlahRelawan     Int?
+  totalBeneficiaries Int?
+
+  // Rekening
+  namaBank          String?
+  nomorRekening     String?
+  atasNama          String?
+
+  // Social Media
+  instagram         String?
+  facebook          String?
+  twitter           String?
+  linkedin          String?
+  youtube           String?
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("ngo_profiles")
+}
+
+model VerificationDocument {
+  id             String             @id @default(cuid())
+  organizationId String
+  type           String             // AKTA, NPWP, SK_KEMENKUMHAM, SURAT_IZIN, PROFIL_ORG, dll
+  fileName       String
+  fileUrl        String
+  fileSize       Int?
+  mimeType       String?
+  isVerified     Boolean            @default(false)
+  verifiedAt     DateTime?
+  verifiedBy     String?
+  notes          String?
+  expiresAt      DateTime?
+  uploadedAt     DateTime           @default(now())
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("verification_documents")
+}
+
+model VerificationReview {
+  id             String             @id @default(cuid())
+  organizationId String
+  reviewerId     String
+  status         VerificationStatus
+  notes          String?            @db.Text
+  checklistData  Json?              // Detail checklist verifikasi
+  reviewedAt     DateTime           @default(now())
+  reviewer       User               @relation(fields: [reviewerId], references: [id])
+
+  @@index([organizationId])
+  @@map("verification_reviews")
+}
+
+model TrustScore {
+  id             String       @id @default(cuid())
+  organizationId String
+  score          Float
+  previousScore  Float?
+  reason         String?
+  calculatedAt   DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("trust_scores")
+}
+
+model FraudFlag {
+  id             String       @id @default(cuid())
+  organizationId String?
+  proposalId     String?
+  flaggedBy      String?      // userId or "SYSTEM"
+  reason         String
+  riskLevel      RiskLevel    @default(SEDANG)
+  isResolved     Boolean      @default(false)
+  resolvedBy     String?
+  resolvedAt     DateTime?
+  resolvedNotes  String?
+  createdAt      DateTime     @default(now())
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  proposal       Proposal?    @relation(fields: [proposalId], references: [id])
+
+  @@index([organizationId])
+  @@index([proposalId])
+  @@map("fraud_flags")
+}
+
+// ============================================================
+// PROPOSAL
+// ============================================================
+
+model Proposal {
+  id                  String           @id @default(cuid())
+  nomor               String           @unique // AUTO-GENERATED: CSR-2024-XXXXX
+  title               String
+  slug                String           @unique
+  summary             String           @db.Text
+  description         String           @db.Text
+  category            ProposalCategory
+  subCategory         String?
+  sdgTags             SDGCategory[]
+  keywords            String[]
+
+  // Organization
+  organizationId      String
+  createdById         String
+  reviewedById        String?
+
+  // Target Wilayah
+  provinsi            String
+  kabupatenKota       String?
+  kecamatan           String?
+  targetWilayahDetail String?
+  isNasional          Boolean          @default(false)
+
+  // Target Penerima
+  targetBeneficiaries Int
+  jenisManfaat        String[]         // perempuan, anak, lansia, disabilitas, petani, dll
+  deskripsiPenerima   String?          @db.Text
+
+  // Anggaran
+  budgetTotal         BigInt
+  budgetBreakdown     Json             // Detail anggaran per komponen
+
+  // Timeline
+  startDate           DateTime
+  endDate             DateTime
+  durationMonths      Int
+
+  // Status
+  status              ProposalStatus   @default(DRAFT)
+  isPublic            Boolean          @default(false)
+  isFeatured          Boolean          @default(false)
+
+  // AI Analysis
+  aiMatchScore        Float?
+  aiCompletionScore   Float?
+  aiRiskScore         Float?
+  aiSummary           String?          @db.Text
+  aiTags              String[]
+  aiAnalyzedAt        DateTime?
+
+  // Funding
+  fundingTarget       BigInt
+  fundingSecured      BigInt           @default(0)
+  fundingPercentage   Float            @default(0)
+
+  // Impact
+  impactMetrics       Json?
+  estimatedImpact     String?          @db.Text
+
+  // Metadata
+  viewCount           Int              @default(0)
+  shortlistCount      Int              @default(0)
+  submittedAt         DateTime?
+  approvedAt          DateTime?
+  rejectedAt          DateTime?
+  completedAt         DateTime?
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  // Relations
+  organization        Organization     @relation(fields: [organizationId], references: [id])
+  createdBy           User             @relation("ProposalCreator", fields: [createdById], references: [id])
+  reviewedBy          User?            @relation("ProposalReviewer", fields: [reviewedById], references: [id])
+  attachments         ProposalAttachment[]
+  statusHistory       ProposalStatusHistory[]
+  milestones          ProposalMilestone[]
+  messages            Message[]
+  fundingCommitments  FundingCommitment[]
+  coFunding           CoFundingParticipant[]
+  project             Project?
+  fraudFlags          FraudFlag[]
+  shortlistedBy       CompanyShortlist[]
+  impactReports       ImpactMetric[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([category])
+  @@index([provinsi])
+  @@index([createdById])
+  @@index([nomor])
+  @@map("proposals")
+}
+
+model ProposalAttachment {
+  id         String   @id @default(cuid())
+  proposalId String
+  type       String   // PROPOSAL_UTAMA, ANGGARAN, RAB, DOKUMEN_LEGAL, FOTO, VIDEO, LAINNYA
+  fileName   String
+  fileUrl    String
+  fileSize   Int?
+  mimeType   String?
+  isPublic   Boolean  @default(false)
+  uploadedAt DateTime @default(now())
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@map("proposal_attachments")
+}
+
+model ProposalStatusHistory {
+  id         String         @id @default(cuid())
+  proposalId String
+  fromStatus ProposalStatus?
+  toStatus   ProposalStatus
+  changedBy  String
+  notes      String?        @db.Text
+  changedAt  DateTime       @default(now())
+  proposal   Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@map("proposal_status_history")
+}
+
+model ProposalMilestone {
+  id          String    @id @default(cuid())
+  proposalId  String
+  title       String
+  description String?   @db.Text
+  targetDate  DateTime
+  orderIndex  Int
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  proposal    Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@map("proposal_milestones")
+}
+
+model CompanyShortlist {
+  id             String       @id @default(cuid())
+  companyOrgId   String
+  proposalId     String
+  notes          String?
+  shortlistedAt  DateTime     @default(now())
+  proposal       Proposal     @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@unique([companyOrgId, proposalId])
+  @@index([companyOrgId])
+  @@index([proposalId])
+  @@map("company_shortlists")
+}
+
+// ============================================================
+// FUNDING & CO-FUNDING
+// ============================================================
+
+model FundingCommitment {
+  id              String        @id @default(cuid())
+  proposalId      String
+  companyOrgId    String
+  amount          BigInt
+  status          FundingStatus @default(MENUNGGU_KONFIRMASI)
+  isCoFunding     Boolean       @default(false)
+  notes           String?
+  confirmedAt     DateTime?
+  disbursedAt     DateTime?
+  transactionRef  String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  proposal        Proposal      @relation(fields: [proposalId], references: [id])
+  disbursements   FundingDisbursement[]
+
+  @@index([proposalId])
+  @@index([companyOrgId])
+  @@map("funding_commitments")
+}
+
+model CoFundingParticipant {
+  id              String       @id @default(cuid())
+  proposalId      String
+  organizationId  String
+  commitAmount    BigInt
+  percentage      Float
+  status          FundingStatus @default(MENUNGGU_KONFIRMASI)
+  joinedAt        DateTime     @default(now())
+  confirmedAt     DateTime?
+  proposal        Proposal     @relation(fields: [proposalId], references: [id])
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([proposalId, organizationId])
+  @@index([proposalId])
+  @@index([organizationId])
+  @@map("co_funding_participants")
+}
+
+model FundingDisbursement {
+  id                  String            @id @default(cuid())
+  fundingCommitmentId String
+  amount              BigInt
+  disbursedAt         DateTime
+  transactionRef      String?
+  notes               String?
+  buktiTransfer       String?           // file URL
+  fundingCommitment   FundingCommitment @relation(fields: [fundingCommitmentId], references: [id])
+
+  @@index([fundingCommitmentId])
+  @@map("funding_disbursements")
+}
+
+// ============================================================
+// PROJECT & MONITORING
+// ============================================================
+
+model Project {
+  id                String        @id @default(cuid())
+  proposalId        String        @unique
+  kodeProyek        String        @unique // AUTO-GENERATED
+  name              String
+  status            ProjectStatus @default(BELUM_DIMULAI)
+
+  startDate         DateTime
+  endDate           DateTime
+
+  // Progress
+  progressFisik     Float         @default(0)  // 0-100%
+  progressKeuangan  Float         @default(0)  // 0-100%
+
+  // Budget
+  anggaranTotal     BigInt
+  realisasiAnggaran BigInt        @default(0)
+  sisaAnggaran      BigInt?
+
+  // PIC
+  picNama           String?
+  picTelepon        String?
+  picEmail          String?
+
+  // Monitoring
+  lastMonitoringAt  DateTime?
+  nextMonitoringAt  DateTime?
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  proposal          Proposal      @relation(fields: [proposalId], references: [id])
+  milestones        ProjectMilestone[]
+  reports           ProjectReport[]
+  auditReports      AuditReport[]
+  impactMetrics     ImpactMetric[]
+  sustainabilityReports SustainabilityReportProject[]
+
+  @@index([status])
+  @@index([kodeProyek])
+  @@map("projects")
+}
+
+model ProjectMilestone {
+  id            String    @id @default(cuid())
+  projectId     String
+  title         String
+  description   String?   @db.Text
+  targetDate    DateTime
+  orderIndex    Int
+  isCompleted   Boolean   @default(false)
+  completedAt   DateTime?
+  progressPct   Float     @default(0)
+  evidence      String[]  // file URLs
+  notes         String?
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_milestones")
+}
+
+model ProjectReport {
+  id                  String    @id @default(cuid())
+  projectId           String
+  reportType          String    // BULANAN, TRIWULAN, AKHIR, KEUANGAN
+  reportingPeriod     String    // e.g., "2024-01", "Q1-2024"
+  title               String
+  summary             String    @db.Text
+  progressFisik       Float
+  progressKeuangan    Float
+  realisasiAnggaran   BigInt
+  pencapaian          String?   @db.Text
+  kendala             String?   @db.Text
+  rencanaTindakLanjut String?   @db.Text
+  attachments         String[]  // file URLs
+  isSubmitted         Boolean   @default(false)
+  submittedAt         DateTime?
+  reviewedAt          DateTime?
+  reviewedBy          String?
+  reviewNotes         String?
+  createdAt           DateTime  @default(now())
+  project             Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_reports")
+}
+
+model ImpactMetric {
+  id              String    @id @default(cuid())
+  projectId       String?
+  proposalId      String?
+  metricName      String
+  metricValue     Float
+  metricUnit      String
+  metricType      String    // KUANTITATIF, KUALITATIF
+  targetValue     Float?
+  achievementPct  Float?
+  period          String?
+  description     String?
+  recordedAt      DateTime  @default(now())
+  project         Project?  @relation(fields: [projectId], references: [id])
+  proposal        Proposal? @relation(fields: [proposalId], references: [id])
+
+  @@index([projectId])
+  @@index([proposalId])
+  @@map("impact_metrics")
+}
+
+model AuditReport {
+  id                String    @id @default(cuid())
+  projectId         String
+  auditorId         String
+  auditDate         DateTime
+  auditType         String    // LAPANGAN, DOKUMEN, KEUANGAN, AKHIR
+  status            String    // DIJADWALKAN, BERJALAN, SELESAI
+  findings          String?   @db.Text
+  recommendations   String?   @db.Text
+  complianceStatus  String    // PATUH, SEBAGIAN_PATUH, TIDAK_PATUH
+  checklistData     Json?
+  attachments       String[]
+  score             Float?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  project           Project   @relation(fields: [projectId], references: [id])
+  auditor           User      @relation(fields: [auditorId], references: [id])
+
+  @@index([projectId])
+  @@index([auditorId])
+  @@map("audit_reports")
+}
+
+// ============================================================
+// SUSTAINABILITY REPORT
+// ============================================================
+
+model SustainabilityReport {
+  id              String    @id @default(cuid())
+  companyOrgId    String
+  year            Int
+  title           String
+  executiveSummary String?  @db.Text
+
+  // KPI Summary
+  totalDanaCSR     BigInt?
+  totalProyek      Int?
+  totalPenerima    Int?
+  totalOrganisasi  Int?
+
+  // SDG Alignment
+  sdgAchievements  Json?
+
+  // Category Breakdown
+  categoryBreakdown Json?
+
+  // Charts Data (cached)
+  chartsData       Json?
+
+  status           String   @default("DRAFT") // DRAFT, PUBLISHED
+  publishedAt      DateTime?
+  pdfUrl           String?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  projects         SustainabilityReportProject[]
+
+  @@index([companyOrgId])
+  @@index([year])
+  @@map("sustainability_reports")
+}
+
+model SustainabilityReportProject {
+  id                     String               @id @default(cuid())
+  sustainabilityReportId String
+  projectId              String
+  report                 SustainabilityReport @relation(fields: [sustainabilityReportId], references: [id], onDelete: Cascade)
+  project                Project              @relation(fields: [projectId], references: [id])
+
+  @@unique([sustainabilityReportId, projectId])
+  @@map("sustainability_report_projects")
+}
+
+// ============================================================
+// MESSAGING
+// ============================================================
+
+model Message {
+  id         String    @id @default(cuid())
+  proposalId String?
+  senderId   String
+  receiverId String?
+  threadId   String?
+  subject    String?
+  content    String    @db.Text
+  isRead     Boolean   @default(false)
+  readAt     DateTime?
+  isSystem   Boolean   @default(false)
+  attachments String[]
+  createdAt  DateTime  @default(now())
+  proposal   Proposal? @relation(fields: [proposalId], references: [id])
+  sender     User      @relation("MessageSender", fields: [senderId], references: [id])
+  receiver   User?     @relation("MessageReceiver", fields: [receiverId], references: [id])
+
+  @@index([proposalId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([threadId])
+  @@map("messages")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  data      Json?            // Extra data (proposalId, orgId, etc.)
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  actionUrl String?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================================
+// AUDIT LOGS
+// ============================================================
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  userId      String?
+  action      AuditAction
+  resource    String      // table/entity name
+  resourceId  String?
+  oldValue    Json?
+  newValue    Json?
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  user        User?       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([resource])
+  @@index([resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// REGION DATA
+// ============================================================
+
+model Region {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  type        String   // PROVINSI, KABUPATEN, KOTA, KECAMATAN, KELURAHAN
+  parentCode  String?
+  isActive    Boolean  @default(true)
+
+  @@index([type])
+  @@index([parentCode])
+  @@map("regions")
+}
+
+// ============================================================
+// PLATFORM SETTINGS
+// ============================================================
+
+model PlatformSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  type      String   @default("STRING") // STRING, NUMBER, BOOLEAN, JSON
+  group     String?
+  label     String?
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
+model SuccessStory {
+  id             String   @id @default(cuid())
+  title          String
+  slug           String   @unique
+  content        String   @db.Text
+  excerpt        String?
+  coverImage     String?
+  organizationId String?
+  projectId      String?
+  category       ProposalCategory?
+  tags           String[]
+  isPublished    Boolean  @default(false)
+  publishedAt    DateTime?
+  viewCount      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isPublished])
+  @@map("success_stories")
+}
