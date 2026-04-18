@@ -24,6 +24,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
       name: "credentials",
@@ -106,6 +107,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google") {
+        const email = user.email?.toLowerCase();
+        if (!email) return false;
+
+        // Ensure users who previously registered with email/password
+        // can sign in with the same verified Google account.
+        const existingUser = await prisma.user.findUnique({
+          where: { email },
+          select: { id: true, role: true, isActive: true, isSuspended: true },
+        });
+
+        if (existingUser) {
+          if (!existingUser.isActive || existingUser.isSuspended) return false;
+          user.id = existingUser.id;
+          user.role = existingUser.role;
+        } else {
+          user.role = "PUBLIC";
+        }
+      }
+
+      return true;
+    },
     async jwt({ token, user, account, trigger, session }) {
       if (user) {
         token.id = user.id;
@@ -130,9 +154,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.organizationName = org?.name;
             token.organizationType = org?.type;
             token.isVerified = org?.verificationStatus === "TERVERIFIKASI";
+          } else {
+            token.role = (user as any).role || "PUBLIC";
           }
         } else {
-          token.role = (user as any).role;
+          token.role = (user as any).role || "PUBLIC";
           token.organizationId = (user as any).organizationId;
           token.organizationName = (user as any).organizationName;
           token.organizationType = (user as any).organizationType;
@@ -149,7 +175,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
-        session.user.role = token.role as UserRole;
+        session.user.role = (token.role as UserRole) || "PUBLIC";
         session.user.organizationId = token.organizationId as string | undefined;
         session.user.organizationName = token.organizationName as string | undefined;
         session.user.organizationType = token.organizationType as any;

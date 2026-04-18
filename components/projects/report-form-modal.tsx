@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { useLanguage } from "@/components/providers/language-provider";
 
 const schema = z.object({
   reportType: z.enum(["BULANAN", "TRIWULAN", "AKHIR", "KEUANGAN"]),
@@ -41,6 +42,7 @@ const REPORT_TYPES = [
 ];
 
 export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }: ReportFormModalProps) {
+  const { language } = useLanguage();
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; url: string }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitAs, setSubmitAs] = useState<"draft" | "submit">("submit");
@@ -58,6 +60,63 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
 
   const progressFisik = watch("progressFisik");
   const progressKeuangan = watch("progressKeuangan");
+  const t = language === "en" ? {
+    uploadSuccess: "Files uploaded successfully",
+    uploadFail: "Failed to upload files",
+    submitSuccess: "Report submitted successfully!",
+    draftSuccess: "Report draft saved",
+    saveFail: "Failed to save report",
+    title: "Create Project Report",
+    reportType: "Report Type",
+    period: "Period (Month/Year)",
+    reportTitle: "Report Title",
+    titlePlaceholder: "Example: April 2025 Monthly Report - High School Scholarship",
+    physical: "Physical Progress",
+    financial: "Financial Progress",
+    budget: "Budget Realization (IDR)",
+    summary: "Activity Summary",
+    summaryPlaceholder: "Describe the activities completed during this period...",
+    achievements: "Achievements & Impact",
+    achievementsPlaceholder: "What has been achieved? How many beneficiaries were reached?",
+    issues: "Challenges & Solutions",
+    issuesPlaceholder: "Describe the challenges faced and the solutions taken...",
+    nextPlan: "Follow-up Plan",
+    nextPlanPlaceholder: "Describe the activities planned for the next period...",
+    attachments: "Document Attachments (PDF, Photos, etc.)",
+    uploading: "Uploading...",
+    uploadHint: "Click to upload or drag & drop",
+    uploadType: "PDF, Word, Excel, JPG, PNG (max 10MB)",
+    saveDraft: "Save Draft",
+    submit: "Submit Report",
+  } : {
+    uploadSuccess: "File berhasil diupload",
+    uploadFail: "Gagal upload file",
+    submitSuccess: "Laporan berhasil dikirim!",
+    draftSuccess: "Draf laporan disimpan",
+    saveFail: "Gagal menyimpan laporan",
+    title: "Buat Laporan Proyek",
+    reportType: "Jenis Laporan",
+    period: "Periode (Bulan/Tahun)",
+    reportTitle: "Judul Laporan",
+    titlePlaceholder: "Contoh: Laporan Bulanan April 2025 - Beasiswa SMA",
+    physical: "Progres Fisik",
+    financial: "Progres Keuangan",
+    budget: "Realisasi Anggaran (Rp)",
+    summary: "Ringkasan Kegiatan",
+    summaryPlaceholder: "Deskripsikan kegiatan yang sudah dilakukan pada periode ini...",
+    achievements: "Pencapaian & Dampak",
+    achievementsPlaceholder: "Apa saja yang sudah dicapai? Berapa penerima manfaat?",
+    issues: "Kendala & Solusi",
+    issuesPlaceholder: "Kendala yang dihadapi dan solusi yang diambil...",
+    nextPlan: "Rencana Tindak Lanjut",
+    nextPlanPlaceholder: "Kegiatan yang direncanakan untuk periode berikutnya...",
+    attachments: "Lampiran Dokumen (PDF, Foto, dll)",
+    uploading: "Mengupload...",
+    uploadHint: "Klik untuk upload atau drag & drop",
+    uploadType: "PDF, Word, Excel, JPG, PNG (maks 10MB)",
+    saveDraft: "Simpan Draf",
+    submit: "Kirim Laporan",
+  };
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
@@ -73,9 +132,9 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
           setUploadedFiles((prev) => [...prev, { name: file.name, url: data.url }]);
         }
       }
-      toast.success("File berhasil diupload");
+      toast.success(t.uploadSuccess);
     } catch {
-      toast.error("Gagal upload file");
+      toast.error(t.uploadFail);
     } finally {
       setUploading(false);
     }
@@ -93,10 +152,10 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
         }),
       });
       if (!res.ok) throw new Error();
-      toast.success(submitAs === "submit" ? "Laporan berhasil dikirim!" : "Draf laporan disimpan");
+      toast.success(submitAs === "submit" ? t.submitSuccess : t.draftSuccess);
       onSuccess();
     } catch {
-      toast.error("Gagal menyimpan laporan");
+      toast.error(t.saveFail);
     }
   }
 
@@ -106,7 +165,7 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-10">
           <div>
-            <h2 className="font-bold text-lg">Buat Laporan Proyek</h2>
+            <h2 className="font-bold text-lg">{t.title}</h2>
             <p className="text-sm text-muted-foreground truncate max-w-xs">{projectTitle}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-accent transition-colors">
@@ -118,7 +177,7 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
           {/* Jenis & Periode */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Jenis Laporan</label>
+              <label className="text-sm font-medium mb-1.5 block">{t.reportType}</label>
               <select
                 {...register("reportType")}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-background"
@@ -129,7 +188,7 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
               </select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Periode (Bulan/Tahun)</label>
+              <label className="text-sm font-medium mb-1.5 block">{t.period}</label>
               <Input type="month" {...register("reportingPeriod")} />
               {errors.reportingPeriod && <p className="text-xs text-red-500 mt-1">{errors.reportingPeriod.message}</p>}
             </div>
@@ -137,8 +196,8 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
 
           {/* Judul */}
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Judul Laporan</label>
-            <Input placeholder="Contoh: Laporan Bulanan April 2025 - Beasiswa SMA" {...register("title")} />
+            <label className="text-sm font-medium mb-1.5 block">{t.reportTitle}</label>
+            <Input placeholder={t.titlePlaceholder} {...register("title")} />
             {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title.message}</p>}
           </div>
 
@@ -146,7 +205,7 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium mb-1.5 block">
-                Progres Fisik: <span className="text-brand-600 font-bold">{progressFisik}%</span>
+                {t.physical}: <span className="text-brand-600 font-bold">{progressFisik}%</span>
               </label>
               <input
                 type="range" min="0" max="100" step="1"
@@ -159,7 +218,7 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">
-                Progres Keuangan: <span className="text-teal-600 font-bold">{progressKeuangan}%</span>
+                {t.financial}: <span className="text-teal-600 font-bold">{progressKeuangan}%</span>
               </label>
               <input
                 type="range" min="0" max="100" step="1"
@@ -174,7 +233,7 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
 
           {/* Realisasi Anggaran */}
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Realisasi Anggaran (Rp)</label>
+            <label className="text-sm font-medium mb-1.5 block">{t.budget}</label>
             <Input
               type="number" min="0" placeholder="0"
               {...register("realisasiAnggaran")}
@@ -184,11 +243,11 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
 
           {/* Ringkasan */}
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Ringkasan Kegiatan</label>
+            <label className="text-sm font-medium mb-1.5 block">{t.summary}</label>
             <textarea
               {...register("summary")}
               rows={3}
-              placeholder="Deskripsikan kegiatan yang sudah dilakukan pada periode ini..."
+              placeholder={t.summaryPlaceholder}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
             {errors.summary && <p className="text-xs text-red-500 mt-1">{errors.summary.message}</p>}
@@ -196,11 +255,11 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
 
           {/* Pencapaian */}
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Pencapaian & Dampak</label>
+            <label className="text-sm font-medium mb-1.5 block">{t.achievements}</label>
             <textarea
               {...register("pencapaian")}
               rows={2}
-              placeholder="Apa saja yang sudah dicapai? Berapa penerima manfaat?"
+              placeholder={t.achievementsPlaceholder}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
           </div>
@@ -208,20 +267,20 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
           {/* Kendala & Rencana */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Kendala & Solusi</label>
+              <label className="text-sm font-medium mb-1.5 block">{t.issues}</label>
               <textarea
                 {...register("kendala")}
                 rows={2}
-                placeholder="Kendala yang dihadapi dan solusi yang diambil..."
+                placeholder={t.issuesPlaceholder}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Rencana Tindak Lanjut</label>
+              <label className="text-sm font-medium mb-1.5 block">{t.nextPlan}</label>
               <textarea
                 {...register("rencanaTindakLanjut")}
                 rows={2}
-                placeholder="Kegiatan yang direncanakan untuk periode berikutnya..."
+                placeholder={t.nextPlanPlaceholder}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
               />
             </div>
@@ -229,7 +288,7 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
 
           {/* Lampiran */}
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Lampiran Dokumen (PDF, Foto, dll)</label>
+            <label className="text-sm font-medium mb-1.5 block">{t.attachments}</label>
             <div className="border-2 border-dashed border-border rounded-xl p-4 text-center hover:border-brand-400 transition-colors">
               <input
                 type="file"
@@ -246,9 +305,9 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
                   <Upload className="h-8 w-8 text-muted-foreground" />
                 )}
                 <span className="text-sm text-muted-foreground">
-                  {uploading ? "Mengupload..." : "Klik untuk upload atau drag & drop"}
+                  {uploading ? t.uploading : t.uploadHint}
                 </span>
-                <span className="text-xs text-muted-foreground">PDF, Word, Excel, JPG, PNG (maks 10MB)</span>
+                <span className="text-xs text-muted-foreground">{t.uploadType}</span>
               </label>
             </div>
 
@@ -283,7 +342,7 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
               disabled={isSubmitting}
               onClick={() => setSubmitAs("draft")}
             >
-              Simpan Draf
+              {t.saveDraft}
             </Button>
             <Button
               type="submit"
@@ -294,7 +353,7 @@ export function ReportFormModal({ projectId, projectTitle, onClose, onSuccess }:
               onClick={() => setSubmitAs("submit")}
             >
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-              Kirim Laporan
+              {t.submit}
             </Button>
           </div>
         </form>

@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "react-hot-toast";
 import { SessionProvider } from "@/components/providers/session-provider";
-import { auth } from "@/lib/auth";
+import { LanguageProvider } from "@/components/providers/language-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -59,13 +59,11 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
   return (
     <html
       lang="id"
@@ -73,29 +71,31 @@ export default async function RootLayout({
       className={`${inter.variable} ${plusJakarta.variable}`}
     >
       <body className="min-h-screen bg-background font-sans antialiased">
-        <SessionProvider session={session}>
+        <SessionProvider>
           <QueryProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="light"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-              <Toaster
-                position="top-right"
-                toastOptions={{
-                  duration: 4000,
-                  style: {
-                    background: "hsl(var(--card))",
-                    color: "hsl(var(--foreground))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "0.75rem",
-                    boxShadow: "0 10px 40px -10px rgba(0,0,0,0.15)",
-                  },
-                }}
-              />
-            </ThemeProvider>
+            <LanguageProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="light"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    duration: 4000,
+                    style: {
+                      background: "hsl(var(--card))",
+                      color: "hsl(var(--foreground))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "0.75rem",
+                      boxShadow: "0 10px 40px -10px rgba(0,0,0,0.15)",
+                    },
+                  }}
+                />
+              </ThemeProvider>
+            </LanguageProvider>
           </QueryProvider>
         </SessionProvider>
       </body>

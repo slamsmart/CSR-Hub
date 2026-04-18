@@ -2,9 +2,8 @@
 
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import {
-  PlusCircle, FileText, Download, CheckCircle2, Clock,
+  PlusCircle, FileText, CheckCircle2, Clock,
   ChevronRight, BarChart3, AlertCircle, Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ReportFormModal } from "./report-form-modal";
 import { ReportPrintView } from "./report-print-view";
 import { formatRupiah, cn } from "@/lib/utils";
+import { useLanguage } from "@/components/providers/language-provider";
 
 interface Project {
   id: string;
@@ -48,19 +48,60 @@ const TYPE_COLORS: Record<string, string> = {
   AKHIR: "bg-green-100 text-green-700",
 };
 
-const TYPE_LABEL: Record<string, string> = {
-  BULANAN: "Bulanan",
-  TRIWULAN: "Triwulan",
-  KEUANGAN: "Keuangan",
-  AKHIR: "Laporan Akhir",
-};
+const TYPE_LABEL = {
+  id: { BULANAN: "Bulanan", TRIWULAN: "Triwulan", KEUANGAN: "Keuangan", AKHIR: "Laporan Akhir" },
+  en: { BULANAN: "Monthly", TRIWULAN: "Quarterly", KEUANGAN: "Financial", AKHIR: "Final Report" },
+} as const;
 
 export function PelaporanPageClient() {
-  const { data: sessionData } = useSession();
+  const { language } = useLanguage();
   const queryClient = useQueryClient();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [viewReport, setViewReport] = useState<Report | null>(null);
+  const t = language === "en" ? {
+    title: "Program Reporting",
+    subtitle: "Create and manage monthly, financial, and impact reports for your CSR projects",
+    createReport: "Create Report",
+    activeProjects: "Active Projects",
+    noActiveProjects: "No active projects yet",
+    physical: "Physical",
+    finance: "Financial",
+    selectProject: "Select a project to view reports",
+    clickLeft: "Click one of the projects on the left",
+    reportsFor: "Reports for",
+    realization: "Realization",
+    history: "Report History",
+    createNew: "Create New Report",
+    noReports: "No reports yet",
+    firstReport: "Create the first report for this project",
+    createFirst: "Create First Report",
+    submitted: "Submitted",
+    draft: "Draft",
+    view: "View",
+    attachments: "attachments",
+  } : {
+    title: "Pelaporan Program",
+    subtitle: "Buat dan kelola laporan bulanan, keuangan, dan dampak proyek CSR Anda",
+    createReport: "Buat Laporan",
+    activeProjects: "Proyek Aktif",
+    noActiveProjects: "Belum ada proyek aktif",
+    physical: "Fisik",
+    finance: "Keuangan",
+    selectProject: "Pilih proyek untuk melihat laporan",
+    clickLeft: "Klik salah satu proyek di sebelah kiri",
+    reportsFor: "Laporan untuk",
+    realization: "Realisasi",
+    history: "Riwayat Laporan",
+    createNew: "Buat Laporan Baru",
+    noReports: "Belum ada laporan",
+    firstReport: "Buat laporan pertama untuk proyek ini",
+    createFirst: "Buat Laporan Pertama",
+    submitted: "Terkirim",
+    draft: "Draf",
+    view: "Lihat",
+    attachments: "lampiran",
+  };
 
   const { data: projectsData, isLoading: loadingProjects } = useQuery({
     queryKey: ["my-projects"],
@@ -86,46 +127,32 @@ export function PelaporanPageClient() {
   const reports: Report[] = reportsData?.data || [];
 
   if (loadingProjects) {
-    return (
-      <div className="space-y-4 animate-pulse">
-        {[1, 2, 3].map((i) => <div key={i} className="h-24 bg-muted rounded-xl" />)}
-      </div>
-    );
+    return <div className="space-y-4 animate-pulse">{[1, 2, 3].map((i) => <div key={i} className="h-24 rounded-xl bg-muted" />)}</div>;
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Pelaporan Program</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Buat dan kelola laporan bulanan, keuangan, dan dampak proyek CSR Anda
-          </p>
+          <h1 className="text-2xl font-bold">{t.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t.subtitle}</p>
         </div>
         {selectedProject && (
-          <Button
-            variant="brand"
-            className="gap-2"
-            onClick={() => setShowForm(true)}
-          >
+          <Button variant="brand" className="gap-2" onClick={() => setShowForm(true)}>
             <PlusCircle className="h-4 w-4" />
-            Buat Laporan
+            {t.createReport}
           </Button>
         )}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Project List */}
-        <div className="lg:col-span-1 space-y-3">
-          <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Proyek Aktif ({projects.length})
-          </h2>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-3 lg:col-span-1">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t.activeProjects} ({projects.length})</h2>
           {projects.length === 0 ? (
             <Card className="border-dashed">
-              <CardContent className="py-8 text-center text-muted-foreground text-sm">
-                <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                Belum ada proyek aktif
+              <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                <AlertCircle className="mx-auto mb-2 h-8 w-8 opacity-40" />
+                {t.noActiveProjects}
               </CardContent>
             </Card>
           ) : (
@@ -134,168 +161,110 @@ export function PelaporanPageClient() {
                 key={project.id}
                 onClick={() => setSelectedProject(project)}
                 className={cn(
-                  "w-full text-left rounded-xl border p-4 transition-all hover:shadow-md",
-                  selectedProject?.id === project.id
-                    ? "border-brand-500 bg-brand-50 shadow-md"
-                    : "bg-white hover:border-brand-300"
+                  "w-full rounded-xl border p-4 text-left transition-all hover:border-brand-300 hover:shadow-md",
+                  selectedProject?.id === project.id ? "border-brand-500 bg-brand-50 shadow-md" : "bg-white"
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium text-sm leading-snug line-clamp-2">
-                    {project.proposal.title}
-                  </p>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <p className="line-clamp-2 text-sm font-medium leading-snug">{project.proposal.title}</p>
+                  <ChevronRight className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
                 </div>
                 <div className="mt-3 space-y-1.5">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Fisik</span>
+                    <span>{t.physical}</span>
                     <span className="font-medium text-foreground">{project.progressFisik}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5">
-                    <div
-                      className="bg-brand-600 h-1.5 rounded-full"
-                      style={{ width: `${project.progressFisik}%` }}
-                    />
-                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-gray-200"><div className="h-1.5 rounded-full bg-brand-600" style={{ width: `${project.progressFisik}%` }} /></div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Keuangan</span>
+                    <span>{t.finance}</span>
                     <span className="font-medium text-foreground">{project.progressKeuangan}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5">
-                    <div
-                      className="bg-teal-600 h-1.5 rounded-full"
-                      style={{ width: `${project.progressKeuangan}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="mt-2">
-                  <Badge
-                    className={cn(
-                      "text-xs",
-                      project.status === "BERJALAN" ? "bg-green-100 text-green-700" :
-                      project.status === "SELESAI" ? "bg-blue-100 text-blue-700" :
-                      "bg-gray-100 text-gray-600"
-                    )}
-                  >
-                    {project.status}
-                  </Badge>
+                  <div className="h-1.5 w-full rounded-full bg-gray-200"><div className="h-1.5 rounded-full bg-teal-600" style={{ width: `${project.progressKeuangan}%` }} /></div>
                 </div>
               </button>
             ))
           )}
         </div>
 
-        {/* Reports Panel */}
         <div className="lg:col-span-2">
           {!selectedProject ? (
-            <Card className="h-64 flex items-center justify-center border-dashed">
+            <Card className="flex h-64 items-center justify-center border-dashed">
               <CardContent className="text-center text-muted-foreground">
-                <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                <p className="font-medium">Pilih proyek untuk melihat laporan</p>
-                <p className="text-sm mt-1">Klik salah satu proyek di sebelah kiri</p>
+                <BarChart3 className="mx-auto mb-3 h-12 w-12 opacity-20" />
+                <p className="font-medium">{t.selectProject}</p>
+                <p className="mt-1 text-sm">{t.clickLeft}</p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
-              {/* Project Header */}
-              <div className="bg-gradient-to-r from-brand-600 to-teal-600 rounded-xl p-5 text-white">
-                <p className="text-sm text-white/70 mb-1">Laporan untuk</p>
-                <h2 className="font-bold text-lg leading-snug">{selectedProject.proposal.title}</h2>
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  <div>
-                    <p className="text-xs text-white/60">Progres Fisik</p>
-                    <p className="text-xl font-bold">{selectedProject.progressFisik}%</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-white/60">Progres Keuangan</p>
-                    <p className="text-xl font-bold">{selectedProject.progressKeuangan}%</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-white/60">Realisasi</p>
-                    <p className="text-xl font-bold">
-                      {selectedProject.realisasiAnggaran
-                        ? formatRupiah(Number(selectedProject.realisasiAnggaran))
-                        : "Rp 0"}
-                    </p>
-                  </div>
+              <div className="rounded-xl bg-gradient-to-r from-brand-600 to-teal-600 p-5 text-white">
+                <p className="mb-1 text-sm text-white/70">{t.reportsFor}</p>
+                <h2 className="text-lg font-bold leading-snug">{selectedProject.proposal.title}</h2>
+                <div className="mt-4 grid grid-cols-3 gap-4">
+                  <div><p className="text-xs text-white/60">{language === "en" ? "Physical Progress" : "Progres Fisik"}</p><p className="text-xl font-bold">{selectedProject.progressFisik}%</p></div>
+                  <div><p className="text-xs text-white/60">{language === "en" ? "Financial Progress" : "Progres Keuangan"}</p><p className="text-xl font-bold">{selectedProject.progressKeuangan}%</p></div>
+                  <div><p className="text-xs text-white/60">{t.realization}</p><p className="text-xl font-bold">{selectedProject.realisasiAnggaran ? formatRupiah(Number(selectedProject.realisasiAnggaran)) : "Rp 0"}</p></div>
                 </div>
               </div>
 
-              {/* Reports List */}
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Riwayat Laporan ({reports.length})</h3>
+                <h3 className="font-semibold">{t.history} ({reports.length})</h3>
                 <Button variant="brand" size="sm" className="gap-2" onClick={() => setShowForm(true)}>
                   <PlusCircle className="h-4 w-4" />
-                  Buat Laporan Baru
+                  {t.createNew}
                 </Button>
               </div>
 
               {loadingReports ? (
-                <div className="space-y-3 animate-pulse">
-                  {[1, 2].map((i) => <div key={i} className="h-20 bg-muted rounded-xl" />)}
-                </div>
+                <div className="space-y-3 animate-pulse">{[1, 2].map((i) => <div key={i} className="h-20 rounded-xl bg-muted" />)}</div>
               ) : reports.length === 0 ? (
                 <Card className="border-dashed">
                   <CardContent className="py-10 text-center text-muted-foreground">
-                    <FileText className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                    <p className="font-medium">Belum ada laporan</p>
-                    <p className="text-sm mt-1">Buat laporan pertama untuk proyek ini</p>
-                    <Button
-                      variant="brand"
-                      size="sm"
-                      className="mt-4 gap-2"
-                      onClick={() => setShowForm(true)}
-                    >
+                    <FileText className="mx-auto mb-3 h-10 w-10 opacity-20" />
+                    <p className="font-medium">{t.noReports}</p>
+                    <p className="mt-1 text-sm">{t.firstReport}</p>
+                    <Button variant="brand" size="sm" className="mt-4 gap-2" onClick={() => setShowForm(true)}>
                       <PlusCircle className="h-4 w-4" />
-                      Buat Laporan Pertama
+                      {t.createFirst}
                     </Button>
                   </CardContent>
                 </Card>
               ) : (
                 <div className="space-y-3">
                   {reports.map((report) => (
-                    <Card key={report.id} className="border hover:shadow-md transition-shadow">
+                    <Card key={report.id} className="border transition-shadow hover:shadow-md">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-1 flex flex-wrap items-center gap-2">
                               <Badge className={cn("text-xs", TYPE_COLORS[report.reportType])}>
-                                {TYPE_LABEL[report.reportType]}
+                                {TYPE_LABEL[language][report.reportType as keyof typeof TYPE_LABEL.en]}
                               </Badge>
                               <span className="text-xs text-muted-foreground">{report.reportingPeriod}</span>
                               {report.isSubmitted ? (
-                                <Badge className="text-xs bg-green-100 text-green-700 gap-1">
-                                  <CheckCircle2 className="h-3 w-3" /> Terkirim
-                                </Badge>
+                                <Badge className="gap-1 bg-green-100 text-xs text-green-700"><CheckCircle2 className="h-3 w-3" /> {t.submitted}</Badge>
                               ) : (
-                                <Badge variant="outline" className="text-xs gap-1">
-                                  <Clock className="h-3 w-3" /> Draf
-                                </Badge>
+                                <Badge variant="outline" className="gap-1 text-xs"><Clock className="h-3 w-3" /> {t.draft}</Badge>
                               )}
                             </div>
-                            <p className="font-medium text-sm">{report.title}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{report.summary}</p>
+                            <p className="text-sm font-medium">{report.title}</p>
+                            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{report.summary}</p>
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex flex-shrink-0 items-center gap-2">
                             <div className="text-right text-xs">
                               <p className="font-medium text-brand-600">{report.progressFisik}%</p>
-                              <p className="text-muted-foreground">fisik</p>
+                              <p className="text-muted-foreground">{language === "en" ? "physical" : "fisik"}</p>
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-1.5 text-xs"
-                              onClick={() => setViewReport(report)}
-                            >
+                            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setViewReport(report)}>
                               <Eye className="h-3.5 w-3.5" />
-                              Lihat
+                              {t.view}
                             </Button>
                           </div>
                         </div>
                         {report.attachments?.length > 0 && (
                           <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
                             <FileText className="h-3 w-3" />
-                            {report.attachments.length} lampiran
+                            {report.attachments.length} {t.attachments}
                           </div>
                         )}
                       </CardContent>
@@ -308,7 +277,6 @@ export function PelaporanPageClient() {
         </div>
       </div>
 
-      {/* Report Form Modal */}
       {showForm && selectedProject && (
         <ReportFormModal
           projectId={selectedProject.id}
@@ -321,7 +289,6 @@ export function PelaporanPageClient() {
         />
       )}
 
-      {/* Print/Download View */}
       {viewReport && selectedProject && (
         <ReportPrintView
           report={viewReport}

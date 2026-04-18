@@ -8,7 +8,8 @@ import { useTheme } from "next-themes";
 import { UserAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useNotificationCount } from "@/hooks/use-notifications";
-import { ROLE_LABELS } from "@/types";
+import { getRoleLabels } from "@/types";
+import { useLanguage, useStructureCopy } from "@/components/providers/language-provider";
 
 interface DashboardHeaderProps {
   session: Session;
@@ -17,6 +18,9 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ session }: DashboardHeaderProps) {
   const { theme, setTheme } = useTheme();
   const { count: notifCount } = useNotificationCount();
+  const { language, setLanguage } = useLanguage();
+  const copy = useStructureCopy();
+  const roleLabels = getRoleLabels(language);
 
   return (
     <header className="h-16 bg-white dark:bg-gray-950 border-b border-border flex items-center px-6 gap-4 sticky top-0 z-40">
@@ -26,17 +30,35 @@ export function DashboardHeader({ session }: DashboardHeaderProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="search"
-            placeholder="Cari proposal, organisasi, proyek..."
+            placeholder={copy.dashboard.searchPlaceholder}
             className="w-full h-9 pl-9 pr-4 rounded-lg border border-input bg-muted/50 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
           />
         </div>
       </div>
 
       <div className="flex items-center gap-3 ml-auto">
+        <div className="hidden sm:inline-flex items-center rounded-full border border-border/70 bg-background/80 p-1">
+          <button
+            type="button"
+            aria-label={copy.language.switchLabel}
+            onClick={() => setLanguage("id")}
+            className={language === "id" ? "rounded-full bg-brand-600 px-2.5 py-1 text-xs font-semibold text-white" : "rounded-full px-2.5 py-1 text-xs font-semibold text-muted-foreground"}
+          >
+            {copy.language.ind}
+          </button>
+          <button
+            type="button"
+            aria-label={copy.language.switchLabel}
+            onClick={() => setLanguage("en")}
+            className={language === "en" ? "rounded-full bg-brand-600 px-2.5 py-1 text-xs font-semibold text-white" : "rounded-full px-2.5 py-1 text-xs font-semibold text-muted-foreground"}
+          >
+            {copy.language.eng}
+          </button>
+        </div>
         {/* Theme Toggle */}
         <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label={theme === "dark" ? "Aktifkan mode terang" : "Aktifkan mode gelap"}
+          aria-label={theme === "dark" ? copy.dashboard.lightMode : copy.dashboard.darkMode}
           className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -64,7 +86,7 @@ export function DashboardHeader({ session }: DashboardHeaderProps) {
           <div className="hidden md:block text-right">
             <p className="text-sm font-medium leading-none">{session.user.name}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {ROLE_LABELS[session.user.role]}
+              {roleLabels[session.user.role]}
             </p>
           </div>
         </Link>

@@ -3,6 +3,7 @@ import { CheckCircle2, Clock, XCircle, AlertCircle, ShieldCheck } from "lucide-r
 import { cn } from "@/lib/utils";
 import { VerificationStatus } from "@prisma/client";
 import { VERIFICATION_STATUS_LABELS } from "@/types";
+import { useLanguage } from "@/components/providers/language-provider";
 
 interface VerificationBadgeProps {
   status: VerificationStatus;
@@ -17,6 +18,7 @@ export function VerificationBadge({
   size = "md",
   className,
 }: VerificationBadgeProps) {
+  const { language } = useLanguage();
   const config = {
     TERVERIFIKASI: {
       icon: ShieldCheck,
@@ -66,6 +68,19 @@ export function VerificationBadge({
     bg: "bg-gray-50 border-gray-200",
     label: status,
   };
+
+  if (language === "en") {
+    const enLabels: Record<VerificationStatus, string> = {
+      TERVERIFIKASI: "Verified",
+      MENUNGGU_REVIEW: "Pending Review",
+      DALAM_REVIEW: "Under Review",
+      MEMBUTUHKAN_DOKUMEN_TAMBAHAN: "More Documents Needed",
+      DITOLAK: "Rejected",
+      DICABUT: "Revoked",
+      BELUM_DIAJUKAN: "Not Submitted",
+    };
+    config.label = enLabels[status] || config.label;
+  }
 
   const sizeClass = {
     sm: "text-xs px-2 py-0.5 gap-1",

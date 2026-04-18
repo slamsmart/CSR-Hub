@@ -1,4 +1,5 @@
 import React from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
@@ -11,9 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatRupiah } from "@/lib/utils";
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
+interface OrganizationPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: OrganizationPageProps): Promise<Metadata> {
+  const { id } = await params;
   const org = await prisma.organization.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: { name: true, description: true },
   });
   if (!org) return { title: "Organisasi tidak ditemukan" };
@@ -39,9 +45,10 @@ const STATUS_COLORS: Record<string, string> = {
   DITOLAK: "bg-red-100 text-red-700 border-red-200",
 };
 
-export default async function OrganizationProfilePage({ params }: { params: { id: string } }) {
+export default async function OrganizationProfilePage({ params }: OrganizationPageProps) {
+  const { id } = await params;
   const org = await prisma.organization.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       ngoProfile: true,
       members: {

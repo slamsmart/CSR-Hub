@@ -13,8 +13,8 @@ import { Input } from "@/components/ui/input";
 import toast from "react-hot-toast";
 
 const loginSchema = z.object({
-  email: z.string().email("Email tidak valid"),
-  password: z.string().min(1, "Password wajib diisi"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
   rememberMe: z.boolean().optional(),
 });
 
@@ -24,9 +24,18 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const authError = searchParams.get("error");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    authError === "OAuthAccountNotLinked"
+      ? "This email is already registered. You can now continue with Google using the same email address."
+      : authError === "AccessDenied"
+        ? "Access denied. Please contact support if this should not happen."
+        : authError
+          ? "Sign-in failed. Please try again."
+          : null
+  );
   const {
     register,
     handleSubmit,
@@ -49,20 +58,20 @@ export default function LoginPage() {
 
       if (result?.error) {
         if (result.error === "CredentialsSignin") {
-          setError("Email atau password salah. Pastikan Anda memasukkan data yang benar.");
+          setError("Incorrect email or password. Please review your credentials and try again.");
         } else {
-          setError("Terjadi kesalahan. Silakan coba lagi.");
+          setError("Something went wrong. Please try again.");
         }
         return;
       }
 
       if (result?.ok) {
-        toast.success("Berhasil masuk!");
+        toast.success("Signed in successfully");
         router.push(callbackUrl);
         router.refresh();
       }
     } catch {
-      setError("Terjadi kesalahan server. Silakan coba lagi.");
+      setError("A server error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -73,12 +82,12 @@ export default function LoginPage() {
       {/* Header */}
       <div>
         <h1 className="font-display text-2xl font-bold text-foreground">
-          Masuk ke CSR Hub
+          Sign in to CSR Hub
         </h1>
         <p className="text-muted-foreground mt-1.5 text-sm">
-          Belum punya akun?{" "}
+          Don&apos;t have an account yet?{" "}
           <Link href="/register" className="text-brand-600 hover:underline font-medium">
-            Daftar gratis
+            Create an account
           </Link>
         </p>
       </div>
@@ -99,7 +108,7 @@ export default function LoginPage() {
           </label>
           <Input
             type="email"
-            placeholder="nama@organisasi.com"
+            placeholder="name@organization.com"
             leftIcon={<Mail className="h-4 w-4" />}
             error={errors.email?.message}
             autoComplete="email"
@@ -116,12 +125,12 @@ export default function LoginPage() {
               href="/lupa-password"
               className="text-xs text-brand-600 hover:underline"
             >
-              Lupa password?
+              Forgot password?
             </Link>
           </div>
           <Input
             type={showPassword ? "text" : "password"}
-            placeholder="Masukkan password"
+            placeholder="Enter your password"
             leftIcon={<Lock className="h-4 w-4" />}
             rightIcon={
               <button
@@ -146,7 +155,7 @@ export default function LoginPage() {
             {...register("rememberMe")}
           />
           <label htmlFor="rememberMe" className="text-sm text-muted-foreground">
-            Ingat saya selama 30 hari
+            Keep me signed in for 30 days
           </label>
         </div>
 
@@ -157,7 +166,7 @@ export default function LoginPage() {
           className="w-full"
           loading={isLoading}
         >
-          Masuk
+          Sign In
         </Button>
       </form>
 
@@ -167,7 +176,7 @@ export default function LoginPage() {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">Atau masuk dengan</span>
+          <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
         </div>
       </div>
 
@@ -197,13 +206,13 @@ export default function LoginPage() {
             fill="#EA4335"
           />
         </svg>
-        Masuk dengan Google
+        Continue with Google
       </Button>
 
       {/* Security Note */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
         <ShieldCheck className="h-3.5 w-3.5 text-brand-500" />
-        <span>Koneksi aman dengan enkripsi SSL/TLS</span>
+        <span>Secure connection protected with SSL/TLS encryption</span>
       </div>
     </div>
   );

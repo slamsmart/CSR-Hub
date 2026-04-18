@@ -1,54 +1,167 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import {
-  User, Lock, Bell, Building2, Shield, Save, Eye, EyeOff,
-  CheckCircle2, AlertTriangle, Smartphone, Key, Upload,
-  Trash2, ChevronRight,
-} from "lucide-react";
+import { User, Lock, Bell, Building2, Save, Eye, EyeOff, CheckCircle2, Smartphone, Key, Upload, Trash2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useLanguage, useStructureCopy } from "@/components/providers/language-provider";
+import { getRoleLabels } from "@/types";
 
 type SettingsTab = "profil" | "keamanan" | "notifikasi" | "organisasi";
 
-const TABS: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
-  { key: "profil", label: "Profil Akun", icon: User },
-  { key: "keamanan", label: "Keamanan", icon: Lock },
-  { key: "notifikasi", label: "Notifikasi", icon: Bell },
-  { key: "organisasi", label: "Organisasi", icon: Building2 },
-];
+const TAB_ICONS = { profil: User, keamanan: Lock, notifikasi: Bell, organisasi: Building2 } as const;
 
-const NOTIFICATION_PREFS = [
-  { key: "proposal_status", label: "Perubahan status proposal", category: "Proposal", defaultOn: true },
-  { key: "proposal_komentar", label: "Komentar pada proposal saya", category: "Proposal", defaultOn: true },
-  { key: "milestone_reminder", label: "Pengingat milestone jatuh tempo", category: "Proyek", defaultOn: true },
-  { key: "laporan_reminder", label: "Pengingat laporan bulanan", category: "Proyek", defaultOn: true },
-  { key: "ai_match", label: "Rekomendasi AI matching baru", category: "Matching", defaultOn: true },
-  { key: "cofunding_invite", label: "Undangan co-funding", category: "Matching", defaultOn: true },
-  { key: "verifikasi_update", label: "Update status verifikasi", category: "Sistem", defaultOn: true },
-  { key: "platform_news", label: "Berita & pembaruan platform", category: "Sistem", defaultOn: false },
-];
+const CONTENT = {
+  id: {
+    headerDescription: "Kelola profil, keamanan, dan preferensi notifikasi Anda.",
+    tabs: { profil: "Profil Akun", keamanan: "Keamanan", notifikasi: "Notifikasi", organisasi: "Organisasi" },
+    savedUploadFormat: "Format harus JPG, PNG, atau WebP",
+    savedUploadSize: "Ukuran maksimal 2MB",
+    savedAvatarSuccess: "Foto profil berhasil diperbarui",
+    savedAvatarError: "Gagal mengupload foto",
+    savedProfileSuccess: "Profil berhasil disimpan",
+    savedProfileError: "Gagal menyimpan profil",
+    savedPasswordSuccess: "Password berhasil diubah",
+    savedTwoFaOff: "2FA dinonaktifkan",
+    savedTwoFaOn: "2FA berhasil diaktifkan",
+    savedNotifSuccess: "Preferensi notifikasi disimpan",
+    savedOrgSuccess: "Profil organisasi disimpan",
+    profile: {
+      title: "Informasi Pribadi", changePhoto: "Ganti Foto", uploading: "Mengupload...", photoHint: "JPG, PNG, atau WebP, maks. 2MB",
+      fullName: "Nama Lengkap", email: "Email", phone: "Nomor HP", role: "Role", fullNamePlaceholder: "Nama lengkap",
+      save: "Simpan Perubahan", dangerZone: "Zona Bahaya", deleteTitle: "Hapus Akun", deleteDescription: "Aksi ini permanen dan tidak dapat dibatalkan.", deleteButton: "Hapus Akun"
+    },
+    security: {
+      passwordTitle: "Ubah Password", oldPassword: "Password Lama", oldPlaceholder: "Password saat ini", newPassword: "Password Baru",
+      newPlaceholder: "Password baru (min. 8 karakter)", strengthHint: "Gunakan kombinasi huruf besar, angka, dan simbol",
+      confirmPassword: "Konfirmasi Password Baru", confirmPlaceholder: "Ulangi password baru", changeButton: "Ubah Password",
+      twoFaTitle: "Autentikasi Dua Faktor (2FA)", active: "Aktif", inactive: "Nonaktif", authApp: "Authenticator App",
+      authEnabled: "2FA aktif menggunakan Google Authenticator / Authy.", authDisabled: "Tingkatkan keamanan akun dengan kode OTP dari aplikasi authenticator.",
+      disable2fa: "Nonaktifkan", enable2fa: "Aktifkan 2FA", recoveryCodes: "Recovery Codes",
+      recoveryHint: "Simpan kode ini di tempat aman. Gunakan jika kehilangan akses ke aplikasi authenticator.", loginHistory: "Riwayat Login",
+      thisSession: "Sesi Ini", revoke: "Cabut",
+      sessions: [
+        { device: "Chrome - Windows", location: "Jakarta, Indonesia", time: "Sekarang", current: true },
+        { device: "Safari - iPhone 14", location: "Jakarta, Indonesia", time: "2 hari lalu", current: false },
+        { device: "Firefox - Mac", location: "Surabaya, Indonesia", time: "5 hari lalu", current: false }
+      ]
+    },
+    notifications: {
+      title: "Preferensi Notifikasi", save: "Simpan Preferensi", categories: { Proposal: "Proposal", Proyek: "Proyek", Matching: "Matching", Sistem: "Sistem" },
+      prefs: [
+        { key: "proposal_status", label: "Perubahan status proposal", category: "Proposal", defaultOn: true },
+        { key: "proposal_komentar", label: "Komentar pada proposal saya", category: "Proposal", defaultOn: true },
+        { key: "milestone_reminder", label: "Pengingat milestone jatuh tempo", category: "Proyek", defaultOn: true },
+        { key: "laporan_reminder", label: "Pengingat laporan bulanan", category: "Proyek", defaultOn: true },
+        { key: "ai_match", label: "Rekomendasi AI matching baru", category: "Matching", defaultOn: true },
+        { key: "cofunding_invite", label: "Undangan co-funding", category: "Matching", defaultOn: true },
+        { key: "verifikasi_update", label: "Update status verifikasi", category: "Sistem", defaultOn: true },
+        { key: "platform_news", label: "Berita dan pembaruan platform", category: "Sistem", defaultOn: false }
+      ]
+    },
+    organization: {
+      title: "Profil Organisasi", orgName: "Nama Organisasi", orgType: "Jenis Organisasi", npwp: "NPWP", website: "Website",
+      address: "Alamat Lengkap", description: "Deskripsi Organisasi", save: "Simpan Profil", verificationTitle: "Status Verifikasi",
+      verified: "Organisasi Terverifikasi", verifiedDesc: "Organisasi Anda telah diverifikasi oleh admin platform pada 8 April 2025. Anda dapat mengajukan proposal secara penuh.",
+      orgTypeOptions: ["NGO / Yayasan", "Koperasi", "Komunitas", "Sekolah / Universitas", "Social Enterprise"],
+      orgNameValue: "Yayasan Cerdas Nusantara", websiteValue: "https://cerdas-nusantara.org",
+      addressValue: "Jl. Pendidikan No. 12, Jakarta Selatan, DKI Jakarta",
+      descriptionValue: "Yayasan yang bergerak di bidang pendidikan untuk anak-anak kurang mampu di wilayah 3T Indonesia."
+    }
+  },
+  en: {
+    headerDescription: "Manage your profile, security, and notification preferences.",
+    tabs: { profil: "Account Profile", keamanan: "Security", notifikasi: "Notifications", organisasi: "Organization" },
+    savedUploadFormat: "Please upload a JPG, PNG, or WebP image",
+    savedUploadSize: "Maximum file size is 2MB",
+    savedAvatarSuccess: "Profile photo updated successfully",
+    savedAvatarError: "Failed to upload profile photo",
+    savedProfileSuccess: "Profile saved successfully",
+    savedProfileError: "Failed to save profile",
+    savedPasswordSuccess: "Password updated successfully",
+    savedTwoFaOff: "Two-factor authentication disabled",
+    savedTwoFaOn: "Two-factor authentication enabled",
+    savedNotifSuccess: "Notification preferences saved",
+    savedOrgSuccess: "Organization profile saved",
+    profile: {
+      title: "Personal Information", changePhoto: "Change Photo", uploading: "Uploading...", photoHint: "JPG, PNG, or WebP, max 2MB",
+      fullName: "Full Name", email: "Email", phone: "Phone Number", role: "Role", fullNamePlaceholder: "Full name",
+      save: "Save Changes", dangerZone: "Danger Zone", deleteTitle: "Delete Account", deleteDescription: "This action is permanent and cannot be undone.", deleteButton: "Delete Account"
+    },
+    security: {
+      passwordTitle: "Change Password", oldPassword: "Current Password", oldPlaceholder: "Enter your current password", newPassword: "New Password",
+      newPlaceholder: "Enter a new password (min. 8 characters)", strengthHint: "Use a mix of uppercase letters, numbers, and symbols",
+      confirmPassword: "Confirm New Password", confirmPlaceholder: "Repeat your new password", changeButton: "Update Password",
+      twoFaTitle: "Two-Factor Authentication (2FA)", active: "Active", inactive: "Inactive", authApp: "Authenticator App",
+      authEnabled: "2FA is enabled using Google Authenticator or Authy.", authDisabled: "Increase account security with one-time codes from an authenticator app.",
+      disable2fa: "Disable", enable2fa: "Enable 2FA", recoveryCodes: "Recovery Codes",
+      recoveryHint: "Store these codes in a safe place. Use them if you lose access to your authenticator app.", loginHistory: "Login History",
+      thisSession: "Current Session", revoke: "Revoke",
+      sessions: [
+        { device: "Chrome - Windows", location: "Jakarta, Indonesia", time: "Now", current: true },
+        { device: "Safari - iPhone 14", location: "Jakarta, Indonesia", time: "2 days ago", current: false },
+        { device: "Firefox - Mac", location: "Surabaya, Indonesia", time: "5 days ago", current: false }
+      ]
+    },
+    notifications: {
+      title: "Notification Preferences", save: "Save Preferences", categories: { Proposal: "Proposals", Proyek: "Projects", Matching: "Matching", Sistem: "System" },
+      prefs: [
+        { key: "proposal_status", label: "Proposal status changes", category: "Proposal", defaultOn: true },
+        { key: "proposal_komentar", label: "Comments on my proposals", category: "Proposal", defaultOn: true },
+        { key: "milestone_reminder", label: "Upcoming milestone reminders", category: "Proyek", defaultOn: true },
+        { key: "laporan_reminder", label: "Monthly report reminders", category: "Proyek", defaultOn: true },
+        { key: "ai_match", label: "New AI matching recommendations", category: "Matching", defaultOn: true },
+        { key: "cofunding_invite", label: "Co-funding invitations", category: "Matching", defaultOn: true },
+        { key: "verifikasi_update", label: "Verification status updates", category: "Sistem", defaultOn: true },
+        { key: "platform_news", label: "Platform news and updates", category: "Sistem", defaultOn: false }
+      ]
+    },
+    organization: {
+      title: "Organization Profile", orgName: "Organization Name", orgType: "Organization Type", npwp: "Tax ID", website: "Website",
+      address: "Full Address", description: "Organization Description", save: "Save Profile", verificationTitle: "Verification Status",
+      verified: "Verified Organization", verifiedDesc: "Your organization was verified by the platform admin on April 8, 2025. You can now submit proposals without restriction.",
+      orgTypeOptions: ["NGO / Foundation", "Cooperative", "Community", "School / University", "Social Enterprise"],
+      orgNameValue: "Yayasan Cerdas Nusantara", websiteValue: "https://cerdas-nusantara.org",
+      addressValue: "Jl. Pendidikan No. 12, South Jakarta, DKI Jakarta",
+      descriptionValue: "A foundation focused on expanding access to education for underserved children in Indonesia's frontier and remote regions."
+    }
+  }
+} as const;
 
 export function PengaturanPage() {
   const { data: session, update: updateSession } = useSession();
+  const { language } = useLanguage();
+  const copy = useStructureCopy();
+  const roleLabels = getRoleLabels(language);
+  const text = CONTENT[language];
+  const tabs = [
+    { key: "profil" as const, label: text.tabs.profil, icon: TAB_ICONS.profil },
+    { key: "keamanan" as const, label: text.tabs.keamanan, icon: TAB_ICONS.keamanan },
+    { key: "notifikasi" as const, label: text.tabs.notifikasi, icon: TAB_ICONS.notifikasi },
+    { key: "organisasi" as const, label: text.tabs.organisasi, icon: TAB_ICONS.organisasi }
+  ];
+  const notificationPrefs = text.notifications.prefs;
+  const categories = [...new Set(notificationPrefs.map((p) => p.category))];
   const [activeTab, setActiveTab] = useState<SettingsTab>("profil");
   const [showOldPw, setShowOldPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
-  const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>(
-    Object.fromEntries(NOTIFICATION_PREFS.map((p) => [p.key, p.defaultOn]))
-  );
+  const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>(Object.fromEntries(notificationPrefs.map((p) => [p.key, p.defaultOn])));
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(session?.user?.image || null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [profileName, setProfileName] = useState(session?.user?.name || "");
-  const [profilePhone, setProfilePhone] = useState((session?.user as any)?.phone || "");
+  const [profilePhone, setProfilePhone] = useState((session?.user as { phone?: string } | undefined)?.phone || "");
   const [savingProfile, setSavingProfile] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    setNotifPrefs(Object.fromEntries(CONTENT[language].notifications.prefs.map((p) => [p.key, p.defaultOn])));
+  }, [language]);
 
   function showSaved(msg: string) {
     setSavedMsg(msg);
@@ -58,14 +171,8 @@ export function PengaturanPage() {
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      showSaved("Format harus JPG, PNG, atau WebP");
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      showSaved("Ukuran maksimal 2MB");
-      return;
-    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return showSaved(text.savedUploadFormat);
+    if (file.size > 2 * 1024 * 1024) return showSaved(text.savedUploadSize);
     setUploadingAvatar(true);
     try {
       const formData = new FormData();
@@ -76,15 +183,11 @@ export function PengaturanPage() {
       if (!res.ok) throw new Error(result.error);
       const url = result.data.url;
       setAvatarUrl(url);
-      await fetch("/api/user/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: url }),
-      });
+      await fetch("/api/user/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ image: url }) });
       await updateSession({ image: url });
-      showSaved("Foto profil berhasil diperbarui");
+      showSaved(text.savedAvatarSuccess);
     } catch {
-      showSaved("Gagal mengupload foto");
+      showSaved(text.savedAvatarError);
     } finally {
       setUploadingAvatar(false);
     }
@@ -93,223 +196,145 @@ export function PengaturanPage() {
   async function handleSaveProfile() {
     setSavingProfile(true);
     try {
-      const res = await fetch("/api/user/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: profileName, phone: profilePhone }),
-      });
+      const res = await fetch("/api/user/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: profileName, phone: profilePhone }) });
       if (!res.ok) throw new Error();
       await updateSession({ name: profileName });
-      showSaved("Profil berhasil disimpan");
+      showSaved(text.savedProfileSuccess);
     } catch {
-      showSaved("Gagal menyimpan profil");
+      showSaved(text.savedProfileError);
     } finally {
       setSavingProfile(false);
     }
   }
 
-  const categories = [...new Set(NOTIFICATION_PREFS.map((p) => p.category))];
+  const roleValue = useMemo(() => {
+    const role = (session?.user as { role?: keyof typeof roleLabels } | undefined)?.role;
+    return role ? roleLabels[role] ?? role : "";
+  }, [roleLabels, session?.user]);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
-        <h1 className="section-title">Pengaturan Akun</h1>
-        <p className="section-subtitle">Kelola profil, keamanan, dan preferensi notifikasi Anda.</p>
+        <h1 className="section-title">{copy.dashboard.nav.settings}</h1>
+        <p className="section-subtitle">{text.headerDescription}</p>
       </div>
 
-      {/* Success toast */}
       {savedMsg && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-2 px-4 py-3 bg-green-600 text-white rounded-xl shadow-lg text-sm font-medium animate-fade-in">
+        <div className="animate-fade-in fixed right-6 top-6 z-50 flex items-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-medium text-white shadow-lg">
           <CheckCircle2 className="h-4 w-4" />
           {savedMsg}
         </div>
       )}
 
-      <div className="grid lg:grid-cols-4 gap-6">
-        {/* Sidebar nav */}
+      <div className="grid gap-6 lg:grid-cols-4">
         <div className="lg:col-span-1">
           <nav className="space-y-1">
-            {TABS.map((tab) => {
+            {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left",
-                    activeTab === tab.key
-                      ? "bg-brand-50 text-brand-700 border border-brand-200"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-all",
+                    activeTab === tab.key ? "border border-brand-200 bg-brand-50 text-brand-700" : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >
                   <Icon className="h-4 w-4" />
                   {tab.label}
-                  {activeTab === tab.key && <ChevronRight className="h-3 w-3 ml-auto" />}
+                  {activeTab === tab.key && <ChevronRight className="ml-auto h-3 w-3" />}
                 </button>
               );
             })}
           </nav>
         </div>
 
-        {/* Content area */}
-        <div className="lg:col-span-3 space-y-4">
-
-          {/* Profil Tab */}
+        <div className="space-y-4 lg:col-span-3">
           {activeTab === "profil" && (
             <>
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Informasi Pribadi</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-base">{text.profile.title}</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Avatar */}
                   <div className="flex items-center gap-4">
                     <div className="relative h-16 w-16 flex-shrink-0">
                       {avatarUrl ? (
-                        <img
-                          src={avatarUrl}
-                          alt="Avatar"
-                          className="h-16 w-16 rounded-full object-cover border-2 border-border"
-                        />
+                        <img src={avatarUrl} alt="Avatar" className="h-16 w-16 rounded-full border-2 border-border object-cover" />
                       ) : (
-                        <div className="h-16 w-16 rounded-full bg-brand-600 text-white flex items-center justify-center text-2xl font-bold">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-600 text-2xl font-bold text-white">
                           {(profileName || session?.user?.name || "U").charAt(0).toUpperCase()}
                         </div>
                       )}
-                      {uploadingAvatar && (
-                        <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
-                          <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        </div>
-                      )}
+                      {uploadingAvatar && <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50"><div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" /></div>}
                     </div>
                     <div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        className="hidden"
-                        onChange={handleAvatarChange}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploadingAvatar}
-                      >
+                      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleAvatarChange} />
+                      <Button variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()} disabled={uploadingAvatar}>
                         <Upload className="h-3.5 w-3.5" />
-                        {uploadingAvatar ? "Mengupload..." : "Ganti Foto"}
+                        {uploadingAvatar ? text.profile.uploading : text.profile.changePhoto}
                       </Button>
-                      <p className="text-xs text-muted-foreground mt-1">JPG, PNG, atau WebP, maks. 2MB</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{text.profile.photoHint}</p>
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nama Lengkap</label>
-                      <Input
-                        value={profileName}
-                        onChange={(e) => setProfileName(e.target.value)}
-                        placeholder="Nama lengkap"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Email</label>
-                      <Input value={session?.user?.email || ""} type="email" disabled className="bg-muted" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nomor HP</label>
-                      <Input
-                        value={profilePhone}
-                        onChange={(e) => setProfilePhone(e.target.value)}
-                        placeholder="+62..."
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Role</label>
-                      <Input value={(session?.user as any)?.role || ""} disabled className="bg-muted" />
-                    </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.profile.fullName}</label><Input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder={text.profile.fullNamePlaceholder} /></div>
+                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.profile.email}</label><Input value={session?.user?.email || ""} type="email" disabled className="bg-muted" /></div>
+                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.profile.phone}</label><Input value={profilePhone} onChange={(e) => setProfilePhone(e.target.value)} placeholder="+62..." /></div>
+                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.profile.role}</label><Input value={roleValue} disabled className="bg-muted" /></div>
                   </div>
 
                   <div className="flex justify-end">
                     <Button variant="brand" className="gap-2" onClick={handleSaveProfile} loading={savingProfile}>
                       <Save className="h-4 w-4" />
-                      Simpan Perubahan
+                      {text.profile.save}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base text-red-600">Zona Bahaya</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-base text-red-600">{text.profile.dangerZone}</CardTitle></CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between p-4 rounded-xl border border-red-200 bg-red-50">
+                  <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 p-4">
                     <div>
-                      <p className="text-sm font-semibold text-red-700">Hapus Akun</p>
-                      <p className="text-xs text-red-600 mt-0.5">Aksi ini permanen dan tidak dapat dibatalkan.</p>
+                      <p className="text-sm font-semibold text-red-700">{text.profile.deleteTitle}</p>
+                      <p className="mt-0.5 text-xs text-red-600">{text.profile.deleteDescription}</p>
                     </div>
-                    <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
-                      <Trash2 className="h-4 w-4 mr-1.5" />
-                      Hapus Akun
-                    </Button>
+                    <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50"><Trash2 className="mr-1.5 h-4 w-4" />{text.profile.deleteButton}</Button>
                   </div>
                 </CardContent>
               </Card>
             </>
           )}
 
-          {/* Keamanan Tab */}
           {activeTab === "keamanan" && (
             <>
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Ubah Password</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-base">{text.security.passwordTitle}</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Password Lama</label>
+                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.security.oldPassword}</label>
                     <div className="relative">
-                      <Input type={showOldPw ? "text" : "password"} placeholder="Password saat ini" className="pr-10" />
-                      <button
-                        type="button"
-                        onClick={() => setShowOldPw(!showOldPw)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
+                      <Input type={showOldPw ? "text" : "password"} placeholder={text.security.oldPlaceholder} className="pr-10" />
+                      <button type="button" onClick={() => setShowOldPw(!showOldPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                         {showOldPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Password Baru</label>
+                    <label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.security.newPassword}</label>
                     <div className="relative">
-                      <Input type={showNewPw ? "text" : "password"} placeholder="Password baru (min. 8 karakter)" className="pr-10" />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPw(!showNewPw)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
+                      <Input type={showNewPw ? "text" : "password"} placeholder={text.security.newPlaceholder} className="pr-10" />
+                      <button type="button" onClick={() => setShowNewPw(!showNewPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                         {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
-                    <div className="flex gap-1 mt-2">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className={cn("h-1 flex-1 rounded-full", i <= 2 ? "bg-muted" : "bg-muted")} />
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">Gunakan kombinasi huruf besar, angka, dan simbol</p>
+                    <div className="mt-2 flex gap-1">{[1, 2, 3, 4, 5].map((i) => <div key={i} className="h-1 flex-1 rounded-full bg-muted" />)}</div>
+                    <p className="mt-1 text-xs text-muted-foreground">{text.security.strengthHint}</p>
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Konfirmasi Password Baru</label>
-                    <Input type="password" placeholder="Ulangi password baru" />
-                  </div>
+                  <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.security.confirmPassword}</label><Input type="password" placeholder={text.security.confirmPlaceholder} /></div>
                   <div className="flex justify-end">
-                    <Button variant="brand" className="gap-2" onClick={() => showSaved("Password berhasil diubah")}>
-                      <Lock className="h-4 w-4" />
-                      Ubah Password
-                    </Button>
+                    <Button variant="brand" className="gap-2" onClick={() => showSaved(text.savedPasswordSuccess)}><Lock className="h-4 w-4" />{text.security.changeButton}</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -317,25 +342,16 @@ export function PengaturanPage() {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">Autentikasi Dua Faktor (2FA)</CardTitle>
-                    <Badge variant={twoFAEnabled ? "success" : "secondary"}>
-                      {twoFAEnabled ? "Aktif" : "Nonaktif"}
-                    </Badge>
+                    <CardTitle className="text-base">{text.security.twoFaTitle}</CardTitle>
+                    <Badge variant={twoFAEnabled ? "success" : "secondary"}>{twoFAEnabled ? text.security.active : text.security.inactive}</Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className={cn(
-                    "flex items-start gap-3 p-4 rounded-xl border",
-                    twoFAEnabled ? "bg-green-50 border-green-200" : "bg-muted/50"
-                  )}>
-                    <Smartphone className={cn("h-5 w-5 flex-shrink-0 mt-0.5", twoFAEnabled ? "text-green-600" : "text-muted-foreground")} />
+                  <div className={cn("flex items-start gap-3 rounded-xl border p-4", twoFAEnabled ? "border-green-200 bg-green-50" : "bg-muted/50")}>
+                    <Smartphone className={cn("mt-0.5 h-5 w-5 flex-shrink-0", twoFAEnabled ? "text-green-600" : "text-muted-foreground")} />
                     <div>
-                      <p className="text-sm font-medium">Authenticator App</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {twoFAEnabled
-                          ? "2FA aktif menggunakan Google Authenticator / Authy."
-                          : "Tingkatkan keamanan akun dengan kode OTP dari aplikasi authenticator."}
-                      </p>
+                      <p className="text-sm font-medium">{text.security.authApp}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{twoFAEnabled ? text.security.authEnabled : text.security.authDisabled}</p>
                     </div>
                     <Button
                       variant={twoFAEnabled ? "outline" : "brand"}
@@ -343,50 +359,36 @@ export function PengaturanPage() {
                       className="ml-auto flex-shrink-0"
                       onClick={() => {
                         setTwoFAEnabled(!twoFAEnabled);
-                        showSaved(twoFAEnabled ? "2FA dinonaktifkan" : "2FA berhasil diaktifkan");
+                        showSaved(twoFAEnabled ? text.savedTwoFaOff : text.savedTwoFaOn);
                       }}
                     >
-                      {twoFAEnabled ? "Nonaktifkan" : "Aktifkan 2FA"}
+                      {twoFAEnabled ? text.security.disable2fa : text.security.enable2fa}
                     </Button>
                   </div>
 
                   {twoFAEnabled && (
-                    <div className="p-4 rounded-xl border bg-muted/30 space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Recovery Codes</p>
-                      <div className="grid grid-cols-2 gap-2 font-mono text-xs">
-                        {["ABCD-1234", "EFGH-5678", "IJKL-9012", "MNOP-3456", "QRST-7890", "UVWX-2345"].map((code) => (
-                          <span key={code} className="p-2 bg-muted rounded-lg text-center">{code}</span>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground">Simpan kode ini di tempat aman. Gunakan jika kehilangan akses ke aplikasi authenticator.</p>
+                    <div className="space-y-2 rounded-xl border bg-muted/30 p-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{text.security.recoveryCodes}</p>
+                      <div className="grid grid-cols-2 gap-2 font-mono text-xs">{["ABCD-1234", "EFGH-5678", "IJKL-9012", "MNOP-3456", "QRST-7890", "UVWX-2345"].map((code) => <span key={code} className="rounded-lg bg-muted p-2 text-center">{code}</span>)}</div>
+                      <p className="text-xs text-muted-foreground">{text.security.recoveryHint}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Riwayat Login</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-base">{text.security.loginHistory}</CardTitle></CardHeader>
                 <CardContent className="space-y-2">
-                  {[
-                    { device: "Chrome · Windows", location: "Jakarta, Indonesia", time: "Sekarang", current: true },
-                    { device: "Safari · iPhone 14", location: "Jakarta, Indonesia", time: "2 hari lalu", current: false },
-                    { device: "Firefox · Mac", location: "Surabaya, Indonesia", time: "5 hari lalu", current: false },
-                  ].map((s, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-xl border">
+                  {text.security.sessions.map((s, i) => (
+                    <div key={i} className="flex items-center justify-between rounded-xl border p-3">
                       <div className="flex items-center gap-3">
                         <Key className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="text-sm font-medium">{s.device}</p>
-                          <p className="text-xs text-muted-foreground">{s.location} · {s.time}</p>
+                          <p className="text-xs text-muted-foreground">{s.location} - {s.time}</p>
                         </div>
                       </div>
-                      {s.current ? (
-                        <Badge variant="success" className="text-xs">Sesi Ini</Badge>
-                      ) : (
-                        <Button variant="ghost" size="sm" className="h-7 text-xs text-red-500">Cabut</Button>
-                      )}
+                      {s.current ? <Badge variant="success" className="text-xs">{text.security.thisSession}</Badge> : <Button variant="ghost" size="sm" className="h-7 text-xs text-red-500">{text.security.revoke}</Button>}
                     </div>
                   ))}
                 </CardContent>
@@ -394,33 +396,27 @@ export function PengaturanPage() {
             </>
           )}
 
-          {/* Notifikasi Tab */}
           {activeTab === "notifikasi" && (
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Preferensi Notifikasi</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-base">{text.notifications.title}</CardTitle></CardHeader>
               <CardContent className="space-y-6">
                 {categories.map((cat) => (
                   <div key={cat}>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{cat}</p>
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {text.notifications.categories[cat as keyof typeof text.notifications.categories]}
+                    </p>
                     <div className="space-y-2">
-                      {NOTIFICATION_PREFS.filter((p) => p.category === cat).map((pref) => (
-                        <div
-                          key={pref.key}
-                          className="flex items-center justify-between p-3 rounded-xl border hover:bg-muted/30 transition-colors"
-                        >
+                      {notificationPrefs.filter((p) => p.category === cat).map((pref) => (
+                        <div key={pref.key} className="flex items-center justify-between rounded-xl border p-3 transition-colors hover:bg-muted/30">
                           <p className="text-sm">{pref.label}</p>
-                          <label className="relative inline-flex items-center cursor-pointer">
+                          <label className="relative inline-flex cursor-pointer items-center">
                             <input
                               type="checkbox"
-                              className="sr-only peer"
+                              className="peer sr-only"
                               checked={notifPrefs[pref.key] ?? pref.defaultOn}
-                              onChange={(e) =>
-                                setNotifPrefs((prev) => ({ ...prev, [pref.key]: e.target.checked }))
-                              }
+                              onChange={(e) => setNotifPrefs((prev) => ({ ...prev, [pref.key]: e.target.checked }))}
                             />
-                            <div className="w-10 h-5 bg-muted rounded-full peer peer-checked:bg-brand-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5" />
+                            <div className="h-5 w-10 rounded-full bg-muted transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-brand-600 peer-checked:after:translate-x-5" />
                           </label>
                         </div>
                       ))}
@@ -428,86 +424,53 @@ export function PengaturanPage() {
                   </div>
                 ))}
                 <div className="flex justify-end">
-                  <Button variant="brand" className="gap-2" onClick={() => showSaved("Preferensi notifikasi disimpan")}>
-                    <Save className="h-4 w-4" />
-                    Simpan Preferensi
-                  </Button>
+                  <Button variant="brand" className="gap-2" onClick={() => showSaved(text.savedNotifSuccess)}><Save className="h-4 w-4" />{text.notifications.save}</Button>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Organisasi Tab */}
           {activeTab === "organisasi" && (
             <>
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Profil Organisasi</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-base">{text.organization.title}</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.orgName}</label><Input defaultValue={text.organization.orgNameValue} /></div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nama Organisasi</label>
-                      <Input defaultValue="Yayasan Cerdas Nusantara" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Jenis Organisasi</label>
+                      <label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.orgType}</label>
                       <select className="flex h-9 w-full rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                        <option>NGO / Yayasan</option>
-                        <option>Koperasi</option>
-                        <option>Komunitas</option>
-                        <option>Sekolah / Universitas</option>
-                        <option>Social Enterprise</option>
+                        {text.organization.orgTypeOptions.map((option) => <option key={option}>{option}</option>)}
                       </select>
                     </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">NPWP</label>
-                      <Input defaultValue="12.345.678.9-012.345" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Website</label>
-                      <Input defaultValue="https://cerdas-nusantara.org" type="url" />
-                    </div>
+                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.npwp}</label><Input defaultValue="12.345.678.9-012.345" /></div>
+                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.website}</label><Input defaultValue={text.organization.websiteValue} type="url" /></div>
+                    <div className="md:col-span-2"><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.address}</label><Input defaultValue={text.organization.addressValue} /></div>
                     <div className="md:col-span-2">
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Alamat Lengkap</label>
-                      <Input defaultValue="Jl. Pendidikan No. 12, Jakarta Selatan, DKI Jakarta" />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Deskripsi Organisasi</label>
-                      <textarea
-                        className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring h-24 resize-none"
-                        defaultValue="Yayasan yang bergerak di bidang pendidikan untuk anak-anak kurang mampu di wilayah 3T Indonesia."
-                      />
+                      <label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.description}</label>
+                      <textarea className="h-24 w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" defaultValue={text.organization.descriptionValue} />
                     </div>
                   </div>
                   <div className="flex justify-end">
-                    <Button variant="brand" className="gap-2" onClick={() => showSaved("Profil organisasi disimpan")}>
-                      <Save className="h-4 w-4" />
-                      Simpan Profil
-                    </Button>
+                    <Button variant="brand" className="gap-2" onClick={() => showSaved(text.savedOrgSuccess)}><Save className="h-4 w-4" />{text.organization.save}</Button>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Status Verifikasi</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-base">{text.organization.verificationTitle}</CardTitle></CardHeader>
                 <CardContent>
-                  <div className="flex items-start gap-4 p-4 rounded-xl bg-green-50 border border-green-200">
-                    <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0" />
+                  <div className="flex items-start gap-4 rounded-xl border border-green-200 bg-green-50 p-4">
+                    <CheckCircle2 className="h-6 w-6 flex-shrink-0 text-green-600" />
                     <div>
-                      <p className="font-semibold text-green-700">Organisasi Terverifikasi</p>
-                      <p className="text-xs text-green-600 mt-0.5">
-                        Organisasi Anda telah diverifikasi oleh admin platform pada 8 April 2025. Anda dapat mengajukan proposal secara penuh.
-                      </p>
+                      <p className="font-semibold text-green-700">{text.organization.verified}</p>
+                      <p className="mt-0.5 text-xs text-green-600">{text.organization.verifiedDesc}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </>
           )}
-
         </div>
       </div>
     </div>

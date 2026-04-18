@@ -18,11 +18,29 @@ const registerSchema = z.object({
     .regex(/[!@#$%^&*]/),
   confirmPassword: z.string(),
   role: z.enum(["PERUSAHAAN", "PENGUSUL", "DONOR_KOLABORATOR"]),
-  phone: z.string().optional(),
-  organizationName: z.string().optional(),
-  organizationType: z.string().optional(),
+  phone: z.string().optional().transform((value) => value?.trim() || undefined),
+  organizationName: z.string().optional().transform((value) => value?.trim() || undefined),
+  organizationType: z.string().optional().transform((value) => value?.trim() || undefined),
   agreeTerms: z.boolean(),
 });
+
+const ORGANIZATION_TYPE_MAP: Record<string, string> = {
+  "NGO / Nonprofit": "NGO",
+  "NGO / LSM": "NGO",
+  "Community Group": "KOMUNITAS",
+  Komunitas: "KOMUNITAS",
+  "School / Educational Institution": "SEKOLAH",
+  "Sekolah / Lembaga Pendidikan": "SEKOLAH",
+  Cooperative: "KOPERASI",
+  Koperasi: "KOPERASI",
+  Foundation: "YAYASAN",
+  Yayasan: "YAYASAN",
+  "Social Startup": "STARTUP_SOSIAL",
+  "Startup Sosial": "STARTUP_SOSIAL",
+  Pemerintah: "PEMERINTAH",
+  Other: "LAINNYA",
+  Lainnya: "LAINNYA",
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -68,14 +86,10 @@ export async function POST(req: NextRequest) {
 
       // Create organization if provided
       if (organizationName) {
-        const orgType = role === "PERUSAHAAN" ? "PERUSAHAAN"
-          : organizationType === "NGO / LSM" ? "NGO"
-          : organizationType === "Komunitas" ? "KOMUNITAS"
-          : organizationType === "Sekolah / Lembaga Pendidikan" ? "SEKOLAH"
-          : organizationType === "Koperasi" ? "KOPERASI"
-          : organizationType === "Yayasan" ? "YAYASAN"
-          : organizationType === "Startup Sosial" ? "STARTUP_SOSIAL"
-          : "LAINNYA";
+        const orgType =
+          role === "PERUSAHAAN"
+            ? "PERUSAHAAN"
+            : ORGANIZATION_TYPE_MAP[organizationType || ""] || "LAINNYA";
 
         const slug = generateSlug(organizationName) + "-" + Date.now();
         const org = await tx.organization.create({

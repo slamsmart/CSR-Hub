@@ -1,7 +1,8 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { ProposalStatus } from "@prisma/client";
-import { PROPOSAL_STATUS_LABELS } from "@/types";
+import { getProposalStatusLabels } from "@/types";
+import { useLanguage } from "@/components/providers/language-provider";
 
 interface ProposalStatusBadgeProps {
   status: ProposalStatus;
@@ -22,17 +23,19 @@ const STATUS_CONFIG: Record<ProposalStatus, { bg: string; dot: string }> = {
 };
 
 export function ProposalStatusBadge({ status, className }: ProposalStatusBadgeProps) {
+  const { language } = useLanguage();
+  const labels = getProposalStatusLabels(language);
   const config = STATUS_CONFIG[status];
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
         config.bg,
-        className
+      className
       )}
     >
       <span className={cn("h-1.5 w-1.5 rounded-full", config.dot)} />
-      {PROPOSAL_STATUS_LABELS[status]}
+      {labels[status]}
     </span>
   );
 }

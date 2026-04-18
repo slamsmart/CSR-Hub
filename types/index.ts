@@ -10,6 +10,7 @@ import {
   NotificationType,
   RiskLevel,
 } from "@prisma/client";
+import { STRUCTURE_COPY, type AppLanguage } from "@/lib/i18n";
 
 export type {
   UserRole,
@@ -333,3 +334,19 @@ export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {
   DITOLAK: "Ditolak",
   DICABUT: "Dicabut",
 };
+
+export function getRoleLabels(language: AppLanguage): Record<UserRole, string> {
+  return STRUCTURE_COPY[language].dashboard.roles as Record<UserRole, string>;
+}
+
+export function getOrgTypeLabels(language: AppLanguage): Record<OrgType, string> {
+  return STRUCTURE_COPY[language].dashboard.orgTypes as Record<OrgType, string>;
+}
+
+export function getProposalStatusLabels(language: AppLanguage): Record<ProposalStatus, string> {
+  return STRUCTURE_COPY[language].dashboard.proposalStatuses as Record<ProposalStatus, string>;
+}
+
+export function getCategoryLabels(language: AppLanguage): Record<ProposalCategory, string> {
+  return STRUCTURE_COPY[language].dashboard.categories as Record<ProposalCategory, string>;
+}

@@ -17,26 +17,26 @@ import { cn } from "@/lib/utils";
 
 const registerSchema = z
   .object({
-    name: z.string().min(2, "Nama minimal 2 karakter"),
-    email: z.string().email("Email tidak valid"),
+    name: z.string().min(2, "Full name must be at least 2 characters"),
+    email: z.string().email("Please enter a valid email address"),
     phone: z.string().optional(),
     password: z
       .string()
-      .min(8, "Password minimal 8 karakter")
-      .regex(/[A-Z]/, "Harus ada huruf kapital")
-      .regex(/[a-z]/, "Harus ada huruf kecil")
-      .regex(/[0-9]/, "Harus ada angka")
-      .regex(/[!@#$%^&*]/, "Harus ada karakter spesial"),
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must include at least one uppercase letter")
+      .regex(/[a-z]/, "Password must include at least one lowercase letter")
+      .regex(/[0-9]/, "Password must include at least one number")
+      .regex(/[!@#$%^&*]/, "Password must include at least one special character"),
     confirmPassword: z.string(),
     role: z.enum(["PERUSAHAAN", "PENGUSUL"]),
     organizationName: z.string().optional(),
     organizationType: z.string().optional(),
     agreeTerms: z.boolean().refine((v) => v === true, {
-      message: "Anda harus menyetujui syarat dan ketentuan",
+      message: "You must agree to the terms and conditions",
     }),
   })
   .refine((d) => d.password === d.confirmPassword, {
-    message: "Password tidak cocok",
+    message: "Passwords do not match",
     path: ["confirmPassword"],
   });
 
@@ -45,8 +45,8 @@ type RegisterForm = z.infer<typeof registerSchema>;
 const ROLE_OPTIONS = [
   {
     value: "PERUSAHAAN",
-    label: "Perusahaan / Industri",
-    description: "Saya ingin mendanai program CSR",
+    label: "Company / Corporate",
+    description: "I want to fund CSR programs",
     icon: Building2,
     color: "text-brand-600",
     bg: "bg-brand-50 border-brand-200",
@@ -54,8 +54,8 @@ const ROLE_OPTIONS = [
   },
   {
     value: "PENGUSUL",
-    label: "NGO / Komunitas / Yayasan",
-    description: "Saya ingin mengajukan program CSR",
+    label: "NGO / Community / Foundation",
+    description: "I want to submit CSR program proposals",
     icon: Users,
     color: "text-teal-600",
     bg: "bg-teal-50 border-teal-200",
@@ -64,8 +64,8 @@ const ROLE_OPTIONS = [
 ];
 
 const ORG_TYPES_FOR_PENGUSUL = [
-  "NGO / LSM", "Komunitas", "Sekolah / Lembaga Pendidikan",
-  "Koperasi", "Yayasan", "Startup Sosial", "Lainnya",
+  "NGO / Nonprofit", "Community Group", "School / Educational Institution",
+  "Cooperative", "Foundation", "Social Startup", "Other",
 ];
 
 export default function RegisterPage() {
@@ -110,14 +110,14 @@ export default function RegisterPage() {
       const result = await res.json();
 
       if (!res.ok) {
-        toast.error(result.error || "Gagal mendaftar");
+        toast.error(result.error || "Registration failed");
         return;
       }
 
-      toast.success("Akun berhasil dibuat! Silakan cek email untuk verifikasi.");
+      toast.success("Your account has been created. Please check your email to verify it.");
       router.push("/login?registered=true");
     } catch {
-      toast.error("Terjadi kesalahan. Silakan coba lagi.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -127,12 +127,12 @@ export default function RegisterPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-bold text-foreground">
-          Daftar ke CSR Hub
+          Create your CSR Hub account
         </h1>
         <p className="text-muted-foreground mt-1.5 text-sm">
-          Sudah punya akun?{" "}
+          Already have an account?{" "}
           <Link href="/login" className="text-brand-600 hover:underline font-medium">
-            Masuk di sini
+            Sign in here
           </Link>
         </p>
       </div>
@@ -141,7 +141,7 @@ export default function RegisterPage() {
         {/* Role Selection */}
         <div>
           <label className="form-label mb-3 block">
-            Daftar sebagai <span className="form-required">*</span>
+            Register as <span className="form-required">*</span>
           </label>
           <div className="grid grid-cols-1 gap-3">
             {ROLE_OPTIONS.map((option) => {
@@ -179,10 +179,10 @@ export default function RegisterPage() {
         {/* Name */}
         <div className="form-group">
           <label className="form-label">
-            Nama Lengkap <span className="form-required">*</span>
+            Full Name <span className="form-required">*</span>
           </label>
           <Input
-            placeholder="Masukkan nama lengkap"
+            placeholder="Enter your full name"
             leftIcon={<User className="h-4 w-4" />}
             error={errors.name?.message}
             {...register("name")}
@@ -192,10 +192,10 @@ export default function RegisterPage() {
         {/* Organization Name */}
         <div className="form-group">
           <label className="form-label">
-            Nama {selectedRole === "PERUSAHAAN" ? "Perusahaan" : "Organisasi"}
+            {selectedRole === "PERUSAHAAN" ? "Company Name" : "Organization Name"}
           </label>
           <Input
-            placeholder={`Nama ${selectedRole === "PERUSAHAAN" ? "perusahaan" : "organisasi"} Anda`}
+            placeholder={`Enter your ${selectedRole === "PERUSAHAAN" ? "company" : "organization"} name`}
             leftIcon={<Building2 className="h-4 w-4" />}
             error={errors.organizationName?.message}
             {...register("organizationName")}
@@ -205,13 +205,13 @@ export default function RegisterPage() {
         {/* Org Type for Pengusul */}
         {selectedRole === "PENGUSUL" && (
           <div className="form-group">
-            <label className="form-label">Jenis Organisasi</label>
+            <label className="form-label">Organization Type</label>
             <div className="relative">
               <select
                 className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
                 {...register("organizationType")}
               >
-                <option value="">Pilih jenis organisasi</option>
+                  <option value="">Select organization type</option>
                 {ORG_TYPES_FOR_PENGUSUL.map((type) => (
                   <option key={type} value={type}>{type}</option>
                 ))}
@@ -238,7 +238,7 @@ export default function RegisterPage() {
 
         {/* Phone */}
         <div className="form-group">
-          <label className="form-label">Nomor Telepon</label>
+            <label className="form-label">Phone Number</label>
           <Input
             placeholder="08xxxxxxxxxx"
             leftIcon={<Phone className="h-4 w-4" />}
@@ -254,7 +254,7 @@ export default function RegisterPage() {
           </label>
           <Input
             type={showPassword ? "text" : "password"}
-            placeholder="Buat password kuat"
+            placeholder="Create a strong password"
             leftIcon={<Lock className="h-4 w-4" />}
             rightIcon={
               <button type="button" onClick={() => setShowPassword(!showPassword)}>
@@ -281,7 +281,7 @@ export default function RegisterPage() {
                 ))}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Kekuatan: {["", "Sangat Lemah", "Lemah", "Cukup", "Kuat", "Sangat Kuat"][passwordStrength]}
+                 Strength: {["", "Very Weak", "Weak", "Fair", "Strong", "Very Strong"][passwordStrength]}
               </p>
             </div>
           )}
@@ -294,7 +294,7 @@ export default function RegisterPage() {
           </label>
           <Input
             type="password"
-            placeholder="Ulangi password"
+            placeholder="Re-enter your password"
             leftIcon={<Lock className="h-4 w-4" />}
             error={errors.confirmPassword?.message}
             {...register("confirmPassword")}
@@ -311,13 +311,13 @@ export default function RegisterPage() {
               {...register("agreeTerms")}
             />
             <label htmlFor="agreeTerms" className="text-sm text-muted-foreground leading-relaxed">
-              Saya menyetujui{" "}
+              I agree to the{" "}
               <Link href="/syarat-ketentuan" className="text-brand-600 hover:underline" target="_blank">
-                Syarat & Ketentuan
+                Terms & Conditions
               </Link>{" "}
-              dan{" "}
+              and the{" "}
               <Link href="/kebijakan-privasi" className="text-brand-600 hover:underline" target="_blank">
-                Kebijakan Privasi
+                Privacy Policy
               </Link>{" "}
               CSR Hub
             </label>
@@ -337,7 +337,7 @@ export default function RegisterPage() {
           className="w-full"
           loading={isLoading}
         >
-          Buat Akun Gratis
+          Create Free Account
         </Button>
       </form>
 

@@ -73,6 +73,16 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|public/|sso-callback).*)",
+    "/api/:path*",
+    "/dashboard/:path*",
+    "/admin/:path*",
+    "/auditor/:path*",
+    "/verifikator/:path*",
+    "/pengusul/:path*",
+    "/perusahaan/:path*",
+    "/notifikasi/:path*",
+    "/pengaturan/:path*",
+    "/login",
+    "/register",
   ],
 };
