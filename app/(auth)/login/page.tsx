@@ -25,13 +25,16 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const authError = searchParams.get("error");
+  const registered = searchParams.get("registered") === "true";
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(
     authError === "OAuthAccountNotLinked"
       ? "This email is already registered. You can now continue with Google using the same email address."
       : authError === "AccessDenied"
-        ? "Access denied. Please contact support if this should not happen."
+        ? "Access denied. Please verify your account email first or contact support if this should not happen."
         : authError
           ? "Sign-in failed. Please try again."
           : null
@@ -58,7 +61,19 @@ function LoginPageContent() {
 
       if (result?.error) {
         if (result.error === "CredentialsSignin") {
-          setError("Incorrect email or password. Please review your credentials and try again.");
+          try {
+            const statusRes = await fetch(`/api/auth/verification-status?email=${encodeURIComponent(data.email.toLowerCase())}`);
+            const statusPayload = await statusRes.json();
+
+            if (statusRes.ok && statusPayload.exists && !statusPayload.emailVerified) {
+              setPendingVerificationEmail(data.email.toLowerCase());
+              setError("Your email address has not been verified yet. Please verify your inbox first, or resend the verification email.");
+            } else {
+              setError("Incorrect email or password. Please review your credentials and try again.");
+            }
+          } catch {
+            setError("Incorrect email or password. Please review your credentials and try again.");
+          }
         } else {
           setError("Something went wrong. Please try again.");
         }
@@ -77,6 +92,37 @@ function LoginPageContent() {
     }
   }
 
+  async function resendVerificationEmail() {
+    if (!pendingVerificationEmail) return;
+
+    setIsResending(true);
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pendingVerificationEmail }),
+      });
+
+      const payload = await res.json();
+
+      if (!res.ok) {
+        toast.error(payload.error || "Failed to resend verification email.");
+        return;
+      }
+
+      if (payload.alreadyVerified) {
+        toast.success("This account is already verified. Please try signing in again.");
+        return;
+      }
+
+      toast.success("A new verification email has been sent.");
+    } catch {
+      toast.error("Failed to resend verification email.");
+    } finally {
+      setIsResending(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -92,11 +138,32 @@ function LoginPageContent() {
         </p>
       </div>
 
+      {registered && (
+        <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3.5 text-sm text-emerald-700">
+          <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <p>Your account has been created. Please verify your email before signing in.</p>
+        </div>
+      )}
+
       {/* Error Alert */}
       {error && (
         <div className="flex items-start gap-3 rounded-lg bg-red-50 border border-red-200 p-3.5 text-sm text-red-700">
           <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-          <p>{error}</p>
+          <div className="space-y-3">
+            <p>{error}</p>
+            {pendingVerificationEmail && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="border-red-200 bg-white text-red-700 hover:bg-red-50"
+                loading={isResending}
+                onClick={resendVerificationEmail}
+              >
+                Resend verification email
+              </Button>
+            )}
+          </div>
         </div>
       )}
 

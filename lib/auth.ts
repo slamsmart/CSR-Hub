@@ -55,6 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Check account status
         if (!user.isActive) return null;
         if (user.isSuspended) return null;
+        if (!user.emailVerified) return null;
 
         // Check account lockout
         if (user.lockedUntil && user.lockedUntil > new Date()) {
@@ -98,6 +99,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           image: user.image,
           role: user.role,
+          emailVerified: Boolean(user.emailVerified),
           organizationId: org?.id,
           organizationName: org?.name,
           organizationType: org?.type,
@@ -116,11 +118,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // can sign in with the same verified Google account.
         const existingUser = await prisma.user.findUnique({
           where: { email },
-          select: { id: true, role: true, isActive: true, isSuspended: true },
+          select: { id: true, role: true, isActive: true, isSuspended: true, emailVerified: true },
         });
 
         if (existingUser) {
           if (!existingUser.isActive || existingUser.isSuspended) return false;
+          if (!existingUser.emailVerified) {
+            return false;
+          }
           user.id = existingUser.id;
           user.role = existingUser.role;
         } else {

@@ -66,7 +66,9 @@ export async function sendVerificationEmail(email: string, name: string, token: 
   const verificationUrl = `${getBaseUrl()}/api/auth/verify-email?token=${encodeURIComponent(token)}`;
 
   return sendEmailJsTemplate({
+    email,
     to_email: email,
+    name,
     to_name: name,
     subject: "Verify your CSR Hub account",
     heading: "Verify your email address",
