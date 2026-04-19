@@ -1,10 +1,6 @@
-"use client";
-
-import { Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { CheckCircle2, AlertCircle, MailCheck } from "lucide-react";
-import { VerifyOtpForm } from "@/components/auth/verify-otp-form";
+import { VerifyOtpFormLoader } from "@/components/auth/verify-otp-form-loader";
 
 const CONTENT = {
   success: {
@@ -33,10 +29,17 @@ const CONTENT = {
   },
 } as const;
 
-function VerifyEmailPageContent() {
-  const searchParams = useSearchParams();
-  const rawStatus = searchParams.get("status");
-  const email = searchParams.get("email") || undefined;
+type VerifyEmailPageProps = {
+  searchParams?: Promise<{
+    status?: string;
+    email?: string;
+  }>;
+};
+
+export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageProps) {
+  const params = (await searchParams) ?? {};
+  const rawStatus = params.status;
+  const email = params.email || undefined;
   const statusKey =
     rawStatus === "success" || rawStatus === "invalid" || rawStatus === "error"
       ? rawStatus
@@ -55,7 +58,7 @@ function VerifyEmailPageContent() {
         <p className="mt-3 text-base leading-7 text-slate-600">{content.description}</p>
 
         {statusKey === "default" ? (
-          <VerifyOtpForm email={email} />
+          <VerifyOtpFormLoader email={email} />
         ) : (
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
@@ -74,13 +77,5 @@ function VerifyEmailPageContent() {
         )}
       </div>
     </main>
-  );
-}
-
-export default function VerifyEmailPage() {
-  return (
-    <Suspense fallback={<main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(34,197,94,0.12),_transparent_35%),linear-gradient(180deg,#f9fbf7_0%,#f3f5ef_100%)] px-6 py-16"><div className="w-full max-w-xl rounded-[28px] border border-white/80 bg-white/90 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur"><h1 className="font-display text-3xl font-bold text-slate-900">Loading verification</h1></div></main>}>
-      <VerifyEmailPageContent />
-    </Suspense>
   );
 }
