@@ -28,6 +28,7 @@ export function ProposalPreview() {
     { field: "Rincian Anggaran", valid: breakdown.length >= 1, msg: `${breakdown.length} item` },
     { field: "Tanggal Mulai", valid: !!data.startDate, msg: data.startDate || "Belum diisi" },
     { field: "Milestone", valid: (data.milestones?.length || 0) >= 1, msg: `${data.milestones?.length || 0} milestone` },
+    { field: "Dokumen", valid: (data.attachments?.length || 0) >= 1, msg: `${data.attachments?.length || 0} file` },
   ];
 
   const allValid = validations.every((v) => v.valid);
@@ -132,6 +133,25 @@ export function ProposalPreview() {
                     <p className="text-sm font-medium">{m.title}</p>
                     {m.targetDate && <p className="text-xs text-muted-foreground">Target: {m.targetDate}</p>}
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(data.attachments?.length || 0) > 0 && (
+          <div className="p-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Dokumen Pendukung</h3>
+            <div className="space-y-2">
+              {data.attachments?.map((attachment, i) => (
+                <div key={`${attachment.fileUrl}-${i}`} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
+                  <div>
+                    <p className="font-medium">{attachment.fileName}</p>
+                    <p className="text-xs text-muted-foreground">{attachment.type}</p>
+                  </div>
+                  <a href={attachment.fileUrl} target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">
+                    Lihat
+                  </a>
                 </div>
               ))}
             </div>

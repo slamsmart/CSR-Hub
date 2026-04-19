@@ -45,6 +45,13 @@ const proposalCreateSchema = z.object({
     orderIndex: z.number(),
   })).default([]),
   estimatedImpact: z.string().optional(),
+  attachments: z.array(z.object({
+    fileName: z.string().min(1),
+    fileUrl: z.string().url(),
+    type: z.string().min(1),
+    fileSize: z.number().optional(),
+    mimeType: z.string().optional(),
+  })).default([]),
   status: z.enum(["DRAFT", "DIKIRIM"]).default("DRAFT"),
   id: z.string().optional(), // For updates
 });
@@ -179,7 +186,7 @@ export async function POST(req: NextRequest) {
       startDate: data.startDate,
       endDate: data.endDate,
       milestones: data.milestones,
-      attachments: [],
+      attachments: data.attachments,
       jenisManfaat: data.jenisManfaat,
       deskripsiPenerima: data.deskripsiPenerima,
     });
@@ -255,6 +262,19 @@ export async function POST(req: NextRequest) {
             description: m.description,
             targetDate: new Date(m.targetDate),
             orderIndex: m.orderIndex,
+          })),
+        });
+      }
+
+      if (data.attachments.length > 0) {
+        await tx.proposalAttachment.createMany({
+          data: data.attachments.map((attachment) => ({
+            proposalId: p.id,
+            type: attachment.type,
+            fileName: attachment.fileName,
+            fileUrl: attachment.fileUrl,
+            fileSize: attachment.fileSize,
+            mimeType: attachment.mimeType,
           })),
         });
       }
@@ -341,6 +361,26 @@ async function handleUpdate(req: NextRequest, session: any, body: any) {
       updatedAt: new Date(),
     },
   });
+
+  if (Array.isArray(updateData.attachments)) {
+    await prisma.$transaction([
+      prisma.proposalAttachment.deleteMany({ where: { proposalId: id } }),
+      ...(updateData.attachments.length > 0
+        ? [
+            prisma.proposalAttachment.createMany({
+              data: updateData.attachments.map((attachment: any) => ({
+                proposalId: id,
+                type: attachment.type,
+                fileName: attachment.fileName,
+                fileUrl: attachment.fileUrl,
+                fileSize: attachment.fileSize,
+                mimeType: attachment.mimeType,
+              })),
+            }),
+          ]
+        : []),
+    ]);
+  }
 
   if (updateData.status === "DIKIRIM" && existing.status !== "DIKIRIM") {
     await prisma.proposalStatusHistory.create({

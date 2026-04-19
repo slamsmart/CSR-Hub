@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
+import { useFormContext } from "react-hook-form";
 import { useDropzone } from "react-dropzone";
 import { Upload, FileText, Image as ImageIcon, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { validateFileUpload } from "@/lib/security";
 import toast from "react-hot-toast";
+import { ProposalWizardData } from "../proposal-wizard";
 
 interface UploadedFile {
   file: File;
@@ -29,8 +31,10 @@ const DOCUMENT_TYPES = [
 ];
 
 export function ProposalStep5() {
+  const { setValue, watch } = useFormContext<ProposalWizardData>();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [uploading, setUploading] = useState<string | null>(null);
+  const attachments = watch("attachments") || [];
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles = acceptedFiles.map((file) => {
@@ -61,7 +65,15 @@ export function ProposalStep5() {
   });
 
   function removeFile(index: number) {
+    const removedFile = files[index];
     setFiles((prev) => prev.filter((_, i) => i !== index));
+    if (removedFile?.url) {
+      setValue(
+        "attachments",
+        attachments.filter((item) => item.fileUrl !== removedFile.url),
+        { shouldDirty: true }
+      );
+    }
   }
 
   function updateCategory(index: number, category: string) {
@@ -88,10 +100,27 @@ export function ProposalStep5() {
 
       if (res.ok) {
         const data = await res.json();
+        const uploadedUrl = data.data?.url;
+        if (!uploadedUrl) throw new Error("Upload gagal");
+
         setFiles((prev) =>
           prev.map((f, i) =>
-            i === index ? { ...f, uploaded: true, url: data.url } : f
+            i === index ? { ...f, uploaded: true, url: uploadedUrl } : f
           )
+        );
+        setValue(
+          "attachments",
+          [
+            ...attachments.filter((item) => item.fileUrl !== uploadedUrl),
+            {
+              fileName: uploadedFile.name,
+              fileUrl: uploadedUrl,
+              type: uploadedFile.category,
+              mimeType: uploadedFile.type,
+              fileSize: uploadedFile.size,
+            },
+          ],
+          { shouldDirty: true }
         );
         toast.success("File berhasil diunggah");
       } else {
@@ -124,6 +153,11 @@ export function ProposalStep5() {
       {/* Required Documents Guide */}
       <div>
         <h3 className="text-sm font-medium mb-3">Dokumen yang Dibutuhkan</h3>
+        {attachments.length > 0 && (
+          <p className="mb-3 text-xs text-muted-foreground">
+            {attachments.length} dokumen sudah tersimpan pada draft proposal ini.
+          </p>
+        )}
         <div className="grid gap-2">
           {DOCUMENT_TYPES.map((docType) => {
             const isUploaded = uploadedCategories.includes(docType.value);

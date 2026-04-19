@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -68,7 +68,7 @@ const ORG_TYPES_FOR_PENGUSUL = [
   "Cooperative", "Foundation", "Social Startup", "Other",
 ];
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultRole = (searchParams.get("role") === "PERUSAHAAN" ? "PERUSAHAAN" : "PENGUSUL") as "PERUSAHAAN" | "PENGUSUL";
@@ -342,5 +342,13 @@ export default function RegisterPage() {
       </form>
 
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="space-y-6"><div><h1 className="font-display text-2xl font-bold text-foreground">Create your CSR Hub account</h1></div></div>}>
+      <RegisterPageContent />
+    </Suspense>
   );
 }

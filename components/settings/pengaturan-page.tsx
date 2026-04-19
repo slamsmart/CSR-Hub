@@ -157,11 +157,66 @@ export function PengaturanPage() {
   const [profileName, setProfileName] = useState(session?.user?.name || "");
   const [profilePhone, setProfilePhone] = useState((session?.user as { phone?: string } | undefined)?.phone || "");
   const [savingProfile, setSavingProfile] = useState(false);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [orgName, setOrgName] = useState("");
+  const [orgType, setOrgType] = useState("");
+  const [orgNpwp, setOrgNpwp] = useState("");
+  const [orgWebsite, setOrgWebsite] = useState("");
+  const [orgAddress, setOrgAddress] = useState("");
+  const [orgDescription, setOrgDescription] = useState("");
+  const [orgVerificationStatus, setOrgVerificationStatus] = useState<string | null>(null);
+  const [loadingOrg, setLoadingOrg] = useState(false);
+  const [savingOrg, setSavingOrg] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     setNotifPrefs(Object.fromEntries(CONTENT[language].notifications.prefs.map((p) => [p.key, p.defaultOn])));
   }, [language]);
+
+  React.useEffect(() => {
+    const orgId = (session?.user as { organizationId?: string } | undefined)?.organizationId;
+    setOrganizationId(orgId || null);
+
+    if (!orgId) {
+      setOrgName("");
+      setOrgType("");
+      setOrgNpwp("");
+      setOrgWebsite("");
+      setOrgAddress("");
+      setOrgDescription("");
+      setOrgVerificationStatus(null);
+      return;
+    }
+
+    let active = true;
+    setLoadingOrg(true);
+
+    fetch(`/api/organizations/${orgId}`)
+      .then(async (res) => {
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "Gagal memuat organisasi");
+        if (!active) return;
+
+        const org = result.data;
+        setOrgName(org.name || "");
+        setOrgType(org.type || "");
+        setOrgNpwp(org.nomorNPWP || "");
+        setOrgWebsite(org.website || "");
+        setOrgAddress(org.address || "");
+        setOrgDescription(org.description || "");
+        setOrgVerificationStatus(org.verificationStatus || null);
+      })
+      .catch(() => {
+        if (active) showSaved(text.savedProfileError);
+      })
+      .finally(() => {
+        if (active) setLoadingOrg(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [session?.user, text.savedProfileError]);
 
   function showSaved(msg: string) {
     setSavedMsg(msg);
@@ -204,6 +259,31 @@ export function PengaturanPage() {
       showSaved(text.savedProfileError);
     } finally {
       setSavingProfile(false);
+    }
+  }
+
+  async function handleSaveOrganization() {
+    if (!organizationId) return;
+
+    setSavingOrg(true);
+    try {
+      const res = await fetch(`/api/organizations/${organizationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: orgName,
+          website: orgWebsite,
+          address: orgAddress,
+          description: orgDescription,
+          nomorNPWP: orgNpwp,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      showSaved(text.savedOrgSuccess);
+    } catch {
+      showSaved(text.savedProfileError);
+    } finally {
+      setSavingOrg(false);
     }
   }
 
@@ -436,23 +516,25 @@ export function PengaturanPage() {
                 <CardHeader><CardTitle className="text-base">{text.organization.title}</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.orgName}</label><Input defaultValue={text.organization.orgNameValue} /></div>
+                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.orgName}</label><Input value={orgName} onChange={(e) => setOrgName(e.target.value)} disabled={loadingOrg || !organizationId} /></div>
                     <div>
                       <label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.orgType}</label>
-                      <select className="flex h-9 w-full rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                      <select className="flex h-9 w-full rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" value={orgType} disabled>
+                        <option value={orgType}>{orgType || "-"}</option>
                         {text.organization.orgTypeOptions.map((option) => <option key={option}>{option}</option>)}
                       </select>
                     </div>
-                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.npwp}</label><Input defaultValue="12.345.678.9-012.345" /></div>
-                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.website}</label><Input defaultValue={text.organization.websiteValue} type="url" /></div>
-                    <div className="md:col-span-2"><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.address}</label><Input defaultValue={text.organization.addressValue} /></div>
+                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.npwp}</label><Input value={orgNpwp} onChange={(e) => setOrgNpwp(e.target.value)} disabled={loadingOrg || !organizationId} /></div>
+                    <div><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.website}</label><Input value={orgWebsite} onChange={(e) => setOrgWebsite(e.target.value)} type="url" disabled={loadingOrg || !organizationId} /></div>
+                    <div className="md:col-span-2"><label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.address}</label><Input value={orgAddress} onChange={(e) => setOrgAddress(e.target.value)} disabled={loadingOrg || !organizationId} /></div>
                     <div className="md:col-span-2">
                       <label className="mb-1.5 block text-xs font-medium text-muted-foreground">{text.organization.description}</label>
-                      <textarea className="h-24 w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" defaultValue={text.organization.descriptionValue} />
+                      <textarea className="h-24 w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" value={orgDescription} onChange={(e) => setOrgDescription(e.target.value)} disabled={loadingOrg || !organizationId} />
                     </div>
                   </div>
+                  {!organizationId && <p className="text-xs text-muted-foreground">Akun ini belum terhubung ke organisasi.</p>}
                   <div className="flex justify-end">
-                    <Button variant="brand" className="gap-2" onClick={() => showSaved(text.savedOrgSuccess)}><Save className="h-4 w-4" />{text.organization.save}</Button>
+                    <Button variant="brand" className="gap-2" onClick={handleSaveOrganization} loading={savingOrg} disabled={!organizationId || loadingOrg}><Save className="h-4 w-4" />{text.organization.save}</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -464,7 +546,11 @@ export function PengaturanPage() {
                     <CheckCircle2 className="h-6 w-6 flex-shrink-0 text-green-600" />
                     <div>
                       <p className="font-semibold text-green-700">{text.organization.verified}</p>
-                      <p className="mt-0.5 text-xs text-green-600">{text.organization.verifiedDesc}</p>
+                      <p className="mt-0.5 text-xs text-green-600">
+                        {orgVerificationStatus === "TERVERIFIKASI"
+                          ? text.organization.verifiedDesc
+                          : `Status saat ini: ${orgVerificationStatus || "BELUM_DIAJUKAN"}`}
+                      </p>
                     </div>
                   </div>
                 </CardContent>

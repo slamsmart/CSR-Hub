@@ -55,6 +55,13 @@ export const proposalWizardSchema = z.object({
     orderIndex: z.number(),
   })).min(1, "Minimal 1 milestone"),
   estimatedImpact: z.string().optional(),
+  attachments: z.array(z.object({
+    fileName: z.string(),
+    fileUrl: z.string().url(),
+    type: z.string(),
+    mimeType: z.string().optional(),
+    fileSize: z.number().optional(),
+  })).default([]),
 });
 
 export type ProposalWizardData = z.infer<typeof proposalWizardSchema>;
@@ -84,11 +91,12 @@ export function ProposalWizard() {
       jenisManfaat: [],
       budgetBreakdown: [],
       milestones: [],
+      attachments: [],
     },
     mode: "onChange",
   });
 
-  const { handleSubmit, trigger, formState: { errors }, getValues } = methods;
+  const { handleSubmit, trigger, getValues } = methods;
 
   const stepFields: Record<number, (keyof ProposalWizardData)[]> = {
     1: ["title", "summary", "description", "category", "sdgTags"],
