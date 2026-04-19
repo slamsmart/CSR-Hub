@@ -114,8 +114,8 @@ function RegisterPageContent() {
         return;
       }
 
-      toast.success("Your account has been created. Please check your email to verify it.");
-      router.push("/login?registered=true");
+      toast.success("Your account has been created. Please check your email for the verification code.");
+      router.push(`/verify-email?email=${encodeURIComponent(data.email.toLowerCase())}`);
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {

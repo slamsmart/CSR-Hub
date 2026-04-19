@@ -92,3 +92,19 @@ export async function sendVerificationEmail(email: string, name: string, token: 
     verification_url: verificationUrl,
   });
 }
+
+export async function sendVerificationOtpEmail(email: string, name: string, otpCode: string) {
+  return sendEmailJsTemplate({
+    email,
+    to_email: email,
+    name,
+    to_name: name,
+    subject: "Your CSR Hub verification code",
+    heading: "Verify your email address",
+    message: `Hi ${name}, use the verification code below to confirm your CSR Hub account.`,
+    otp_code: otpCode,
+    action_label: "Verification Code",
+    app_name: process.env.NEXT_PUBLIC_APP_NAME || "CSR Hub",
+    support_email: process.env.SMTP_FROM || email,
+  });
+}

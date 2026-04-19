@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { generateSecureToken } from "@/lib/security";
-import { sendVerificationEmail } from "@/lib/email";
+import { generateOTP } from "@/lib/security";
+import { sendVerificationOtpEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,16 +30,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, alreadyVerified: true });
     }
 
-    const verifyToken = generateSecureToken(32);
+    const verifyCode = generateOTP(6);
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        emailVerifyToken: verifyToken,
+    await prisma.verificationToken.deleteMany({
+      where: {
+        identifier: user.email,
       },
     });
 
-    await sendVerificationEmail(user.email, user.name, verifyToken);
+    await prisma.verificationToken.create({
+      data: {
+        identifier: user.email,
+        token: verifyCode,
+        expires: new Date(Date.now() + 10 * 60 * 1000),
+      },
+    });
+
+    await sendVerificationOtpEmail(user.email, user.name, verifyCode);
 
     return NextResponse.json({ success: true });
   } catch (error) {

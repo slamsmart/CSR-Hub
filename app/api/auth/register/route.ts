@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { generateSecureToken } from "@/lib/security";
+import { generateOTP } from "@/lib/security";
 import { createAuditLog } from "@/lib/security";
 import { generateSlug } from "@/lib/utils";
-import { sendVerificationEmail } from "@/lib/email";
+import { sendVerificationOtpEmail } from "@/lib/email";
 
 const registerSchema = z.object({
   name: z.string().min(2).max(100),
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const verifyToken = generateSecureToken(32);
+    const verifyCode = generateOTP(6);
 
     // Create user + organization in transaction
     const user = await prisma.$transaction(async (tx) => {
@@ -81,7 +81,6 @@ export async function POST(req: NextRequest) {
           password: hashedPassword,
           role,
           phone,
-          emailVerifyToken: verifyToken,
         },
       });
 
@@ -122,7 +121,21 @@ export async function POST(req: NextRequest) {
     });
 
     try {
-      await sendVerificationEmail(user.email, user.name, verifyToken);
+      await prisma.verificationToken.deleteMany({
+        where: {
+          identifier: user.email,
+        },
+      });
+
+      await prisma.verificationToken.create({
+        data: {
+          identifier: user.email,
+          token: verifyCode,
+          expires: new Date(Date.now() + 10 * 60 * 1000),
+        },
+      });
+
+      await sendVerificationOtpEmail(user.email, user.name, verifyCode);
     } catch (emailError) {
       console.error("[Register] Failed to send verification email", emailError);
     }

@@ -67,7 +67,7 @@ function LoginPageContent() {
 
             if (statusRes.ok && statusPayload.exists && !statusPayload.emailVerified) {
               setPendingVerificationEmail(data.email.toLowerCase());
-              setError("Your email address has not been verified yet. Please verify your inbox first, or resend the verification email.");
+              setError("Your email address has not been verified yet. Enter the OTP code from your inbox, or resend a new code.");
             } else {
               setError("Incorrect email or password. Please review your credentials and try again.");
             }
@@ -115,9 +115,10 @@ function LoginPageContent() {
         return;
       }
 
-      toast.success("A new verification email has been sent.");
+      toast.success("A new verification code has been sent.");
+      router.push(`/verify-email?email=${encodeURIComponent(pendingVerificationEmail)}`);
     } catch {
-      toast.error("Failed to resend verification email.");
+      toast.error("Failed to resend verification code.");
     } finally {
       setIsResending(false);
     }
@@ -141,7 +142,7 @@ function LoginPageContent() {
       {registered && (
         <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3.5 text-sm text-emerald-700">
           <ShieldCheck className="mt-0.5 h-4 w-4 flex-shrink-0" />
-          <p>Your account has been created. Please verify your email before signing in.</p>
+          <p>Your account has been created. Please enter the verification code sent to your email before signing in.</p>
         </div>
       )}
 
@@ -160,7 +161,7 @@ function LoginPageContent() {
                 loading={isResending}
                 onClick={resendVerificationEmail}
               >
-                Resend verification email
+                Resend verification code
               </Button>
             )}
           </div>
