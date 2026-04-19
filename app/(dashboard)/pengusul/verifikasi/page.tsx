@@ -1,13 +1,13 @@
 import { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Verifikasi Organisasi" };
+export const metadata: Metadata = { title: "Organization Verification" };
 
 export default function VerifikasiOrgPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="section-title">Status Verifikasi Organisasi</h1>
-        <p className="section-subtitle">Pantau proses verifikasi dokumen kelayakan organisasi Anda.</p>
+        <h1 className="section-title">Organization Verification Status</h1>
+        <p className="section-subtitle">Track the verification progress of your organization's eligibility documents.</p>
       </div>
       <div className="p-6 rounded-2xl bg-green-50 border border-green-200 flex items-start gap-4">
         <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -16,10 +16,10 @@ export default function VerifikasiOrgPage() {
           </svg>
         </div>
         <div>
-          <p className="font-bold text-green-700 text-lg">Organisasi Terverifikasi</p>
+          <p className="font-bold text-green-700 text-lg">Organization Verified</p>
           <p className="text-sm text-green-600 mt-1">
-            Yayasan Cerdas Nusantara telah berhasil diverifikasi pada 8 April 2025.
-            Anda dapat mengajukan proposal secara penuh tanpa batasan.
+            Yayasan Cerdas Nusantara was successfully verified on April 8, 2025.
+            You can now submit proposals without restrictions.
           </p>
         </div>
       </div>

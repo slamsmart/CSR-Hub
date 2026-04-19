@@ -51,10 +51,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
+  themeColor: "#f7f8f4",
   width: "device-width",
   initialScale: 1,
 };
@@ -74,12 +71,7 @@ export default function RootLayout({
         <SessionProvider>
           <QueryProvider>
             <LanguageProvider>
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="light"
-                enableSystem
-                disableTransitionOnChange
-              >
+              <ThemeProvider>
                 {children}
                 <Toaster
                   position="top-right"

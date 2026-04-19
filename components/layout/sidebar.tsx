@@ -104,7 +104,7 @@ export function Sidebar({ role }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "sticky top-0 flex h-screen flex-col border-r border-border bg-white transition-all duration-300 dark:bg-gray-950",
+        "sticky top-0 flex h-screen flex-col border-r border-border/80 bg-white/88 backdrop-blur transition-all duration-300",
         collapsed ? "w-16" : "w-64"
       )}
     >

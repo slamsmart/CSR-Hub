@@ -3,10 +3,8 @@
 import React from "react";
 import { Session } from "next-auth";
 import Link from "next/link";
-import { Bell, Search, Sun, Moon } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Bell, Search } from "lucide-react";
 import { UserAvatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { useNotificationCount } from "@/hooks/use-notifications";
 import { getRoleLabels } from "@/types";
 import { useLanguage, useStructureCopy } from "@/components/providers/language-provider";
@@ -16,33 +14,31 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ session }: DashboardHeaderProps) {
-  const { theme, setTheme } = useTheme();
   const { count: notifCount } = useNotificationCount();
   const { language, setLanguage } = useLanguage();
   const copy = useStructureCopy();
   const roleLabels = getRoleLabels(language);
 
   return (
-    <header className="h-16 bg-white dark:bg-gray-950 border-b border-border flex items-center px-6 gap-4 sticky top-0 z-40">
-      {/* Search */}
-      <div className="flex-1 max-w-md hidden md:block">
+    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-border/80 bg-white/90 px-6 backdrop-blur">
+      <div className="hidden max-w-md flex-1 md:block">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="search"
             placeholder={copy.dashboard.searchPlaceholder}
-            className="w-full h-9 pl-9 pr-4 rounded-lg border border-input bg-muted/50 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+            className="h-11 w-full rounded-2xl border border-input bg-[#f4f6ef] pl-10 pr-4 text-sm shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-3 ml-auto">
-        <div className="hidden sm:inline-flex items-center rounded-full border border-border/70 bg-background/80 p-1">
+      <div className="ml-auto flex items-center gap-3">
+        <div className="hidden items-center rounded-full border border-border/80 bg-white p-1 shadow-sm sm:inline-flex">
           <button
             type="button"
             aria-label={copy.language.switchLabel}
             onClick={() => setLanguage("id")}
-            className={language === "id" ? "rounded-full bg-brand-600 px-2.5 py-1 text-xs font-semibold text-white" : "rounded-full px-2.5 py-1 text-xs font-semibold text-muted-foreground"}
+            className={language === "id" ? "rounded-full bg-brand-600 px-3 py-1 text-xs font-semibold text-white" : "rounded-full px-3 py-1 text-xs font-semibold text-muted-foreground"}
           >
             {copy.language.ind}
           </button>
@@ -50,42 +46,32 @@ export function DashboardHeader({ session }: DashboardHeaderProps) {
             type="button"
             aria-label={copy.language.switchLabel}
             onClick={() => setLanguage("en")}
-            className={language === "en" ? "rounded-full bg-brand-600 px-2.5 py-1 text-xs font-semibold text-white" : "rounded-full px-2.5 py-1 text-xs font-semibold text-muted-foreground"}
+            className={language === "en" ? "rounded-full bg-brand-600 px-3 py-1 text-xs font-semibold text-white" : "rounded-full px-3 py-1 text-xs font-semibold text-muted-foreground"}
           >
             {copy.language.eng}
           </button>
         </div>
-        {/* Theme Toggle */}
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label={theme === "dark" ? copy.dashboard.lightMode : copy.dashboard.darkMode}
-          className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </button>
 
-        {/* Notifications */}
         <Link href="/notifikasi">
-          <button className="relative p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground">
+          <button className="relative rounded-xl p-2 text-muted-foreground transition-colors hover:bg-accent">
             <Bell className="h-4 w-4" />
             {notifCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
                 {notifCount > 9 ? "9+" : notifCount}
               </span>
             )}
           </button>
         </Link>
 
-        {/* User Info */}
-        <Link href="/pengaturan" className="flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-muted transition-colors">
+        <Link href="/pengaturan" className="flex items-center gap-3 rounded-2xl px-3 py-1.5 transition-colors hover:bg-accent">
           <UserAvatar
             name={session.user.name || "User"}
             image={session.user.image}
             size="sm"
           />
-          <div className="hidden md:block text-right">
-            <p className="text-sm font-medium leading-none">{session.user.name}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+          <div className="hidden text-right md:block">
+            <p className="text-sm font-semibold leading-none">{session.user.name}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {roleLabels[session.user.role]}
             </p>
           </div>

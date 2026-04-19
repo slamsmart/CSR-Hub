@@ -65,7 +65,7 @@ export function Navbar() {
       className={cn(
         "fixed left-0 right-0 top-0 z-50 transition-all duration-300",
         scrolled || !isHomePage
-          ? "border-b border-border bg-white/95 shadow-sm backdrop-blur-md dark:bg-gray-950/95"
+          ? "border-b border-border bg-white/95 shadow-sm backdrop-blur-md"
           : "bg-transparent"
       )}
     >

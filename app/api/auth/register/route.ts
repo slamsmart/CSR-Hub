@@ -5,6 +5,7 @@ import { z } from "zod";
 import { generateSecureToken } from "@/lib/security";
 import { createAuditLog } from "@/lib/security";
 import { generateSlug } from "@/lib/utils";
+import { sendVerificationEmail } from "@/lib/email";
 
 const registerSchema = z.object({
   name: z.string().min(2).max(100),
@@ -120,8 +121,11 @@ export async function POST(req: NextRequest) {
       return newUser;
     });
 
-    // TODO: Send verification email
-    // await sendVerificationEmail(user.email, verifyToken);
+    try {
+      await sendVerificationEmail(user.email, user.name, verifyToken);
+    } catch (emailError) {
+      console.error("[Register] Failed to send verification email", emailError);
+    }
 
     await createAuditLog({
       userId: user.id,
