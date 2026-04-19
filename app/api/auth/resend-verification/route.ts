@@ -46,9 +46,23 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    await sendVerificationOtpEmail(user.email, user.name, verifyCode);
+    const delivery = await sendVerificationOtpEmail(
+      user.email,
+      user.name || user.email.split("@")[0],
+      verifyCode
+    );
 
-    return NextResponse.json({ success: true });
+    if (delivery.skipped) {
+      return NextResponse.json(
+        {
+          error:
+            "OTP email delivery is not configured on the server. Configure EmailJS or SMTP before requesting a new code.",
+        },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json({ success: true, emailSent: true });
   } catch (error) {
     console.error("[Resend Verification]", error);
     return NextResponse.json({ error: "Failed to resend verification email" }, { status: 500 });

@@ -120,6 +120,8 @@ export async function POST(req: NextRequest) {
       return newUser;
     });
 
+    let emailSent = false;
+
     try {
       await prisma.verificationToken.deleteMany({
         where: {
@@ -135,7 +137,12 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      await sendVerificationOtpEmail(user.email, user.name, verifyCode);
+      const delivery = await sendVerificationOtpEmail(
+        user.email,
+        user.name || user.email.split("@")[0],
+        verifyCode
+      );
+      emailSent = !delivery.skipped;
     } catch (emailError) {
       console.error("[Register] Failed to send verification email", emailError);
     }
@@ -150,7 +157,14 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(
-      { success: true, message: "Akun berhasil dibuat. Silakan verifikasi email Anda." },
+      {
+        success: true,
+        emailSent,
+        requiresEmailConfig: !emailSent,
+        message: emailSent
+          ? "Akun berhasil dibuat. Silakan verifikasi email Anda."
+          : "Akun berhasil dibuat, tetapi email OTP gagal dikirim. Silakan coba kirim ulang kode verifikasi.",
+      },
       { status: 201 }
     );
   } catch (error) {

@@ -26,28 +26,45 @@ export async function POST(req: NextRequest) {
     }
 
     if (verificationToken.expires < new Date()) {
-      await prisma.verificationToken.delete({
+      await prisma.verificationToken.deleteMany({
         where: {
-          token: verificationToken.token,
+          identifier: email,
         },
       });
 
       return NextResponse.json({ error: "Verification code has expired" }, { status: 400 });
     }
 
-    await prisma.user.update({
-      where: {
-        email,
-      },
-      data: {
-        emailVerified: new Date(),
-        emailVerifyToken: null,
-      },
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, emailVerified: true },
     });
 
-    await prisma.verificationToken.delete({
+    if (!user) {
+      await prisma.verificationToken.deleteMany({
+        where: {
+          identifier: email,
+        },
+      });
+
+      return NextResponse.json({ error: "Account not found" }, { status: 404 });
+    }
+
+    if (!user.emailVerified) {
+      await prisma.user.update({
+        where: {
+          email,
+        },
+        data: {
+          emailVerified: new Date(),
+          emailVerifyToken: null,
+        },
+      });
+    }
+
+    await prisma.verificationToken.deleteMany({
       where: {
-        token: verificationToken.token,
+        identifier: email,
       },
     });
 

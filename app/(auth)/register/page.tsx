@@ -114,7 +114,11 @@ function RegisterPageContent() {
         return;
       }
 
-      toast.success("Your account has been created. Please check your email for the verification code.");
+      if (result.emailSent) {
+        toast.success("Your account has been created. Please check your email for the verification code.");
+      } else {
+        toast.error("Account created, but OTP email was not sent. Open the verification page and use resend code after fixing EmailJS config.");
+      }
       router.push(`/verify-email?email=${encodeURIComponent(data.email.toLowerCase())}`);
     } catch {
       toast.error("Something went wrong. Please try again.");
