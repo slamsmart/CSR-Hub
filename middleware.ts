@@ -45,11 +45,6 @@ export default auth((req) => {
     }
   }
 
-  // Redirect logged-in users away from auth pages
-  if (session && (pathname === "/login" || pathname === "/register")) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
-
   // Security headers are added via next.config.ts
   const response = NextResponse.next();
 
