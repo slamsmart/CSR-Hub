@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CheckCircle2, AlertCircle, MailCheck } from "lucide-react";
-import { VerifyOtpFormLoader } from "@/components/auth/verify-otp-form-loader";
 
 const CONTENT = {
   success: {
@@ -20,6 +19,12 @@ const CONTENT = {
     description: "We could not verify your email right now. Please try again in a moment.",
     icon: AlertCircle,
     iconClass: "text-rose-600",
+  },
+  resent: {
+    title: "A new code has been sent",
+    description: "Check your inbox for the latest 6-digit verification code, then enter it below.",
+    icon: MailCheck,
+    iconClass: "text-emerald-600",
   },
   default: {
     title: "Enter your verification code",
@@ -41,7 +46,10 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
   const rawStatus = params.status;
   const email = params.email || undefined;
   const statusKey =
-    rawStatus === "success" || rawStatus === "invalid" || rawStatus === "error"
+    rawStatus === "success" ||
+    rawStatus === "invalid" ||
+    rawStatus === "error" ||
+    rawStatus === "resent"
       ? rawStatus
       : "default";
 
@@ -57,8 +65,61 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
         <h1 className="font-display text-3xl font-bold text-slate-900">{content.title}</h1>
         <p className="mt-3 text-base leading-7 text-slate-600">{content.description}</p>
 
-        {statusKey === "default" ? (
-          <VerifyOtpFormLoader email={email} />
+        {statusKey === "default" || statusKey === "resent" ? (
+          <div className="mt-8 space-y-4">
+            <form action="/api/auth/verify-otp-web" method="POST" className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Email address</label>
+                <input
+                  name="email"
+                  defaultValue={email}
+                  type="email"
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  placeholder="name@organization.com"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">6-digit verification code</label>
+                <input
+                  name="code"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-center text-2xl tracking-[0.35em] text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                  placeholder="123456"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  Verify code
+                </button>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  Back to sign in
+                </Link>
+              </div>
+            </form>
+
+            <form action="/api/auth/resend-verification-web" method="POST" className="flex flex-wrap gap-3">
+              <input type="hidden" name="email" value={email || ""} />
+              <button
+                type="submit"
+                disabled={!email}
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                Resend code
+              </button>
+            </form>
+          </div>
         ) : (
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
