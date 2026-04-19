@@ -1,21 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-function buildRedirectUrl(status: "success" | "invalid" | "error") {
-  const baseUrl = (
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXTAUTH_URL ||
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
-
-  return `${baseUrl}/verify-email?status=${status}`;
+function buildRedirectUrl(req: NextRequest, status: "success" | "invalid" | "error") {
+  const origin = req.nextUrl.origin.replace(/\/$/, "");
+  return `${origin}/verify-email?status=${status}`;
 }
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token")?.trim();
 
   if (!token) {
-    return NextResponse.redirect(buildRedirectUrl("invalid"));
+    return NextResponse.redirect(buildRedirectUrl(req, "invalid"));
   }
 
   try {
@@ -25,7 +20,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.redirect(buildRedirectUrl("invalid"));
+      return NextResponse.redirect(buildRedirectUrl(req, "invalid"));
     }
 
     if (!user.emailVerified) {
@@ -38,9 +33,9 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.redirect(buildRedirectUrl("success"));
+    return NextResponse.redirect(buildRedirectUrl(req, "success"));
   } catch (error) {
     console.error("[Verify Email]", error);
-    return NextResponse.redirect(buildRedirectUrl("error"));
+    return NextResponse.redirect(buildRedirectUrl(req, "error"));
   }
 }
