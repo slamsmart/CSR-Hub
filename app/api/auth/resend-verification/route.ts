@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { generateOTP } from "@/lib/security";
 import { sendVerificationOtpEmail } from "@/lib/email";
+import { convexClient } from "@/lib/convex";
+import { api } from "@/convex/_generated/api";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,15 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        emailVerified: true,
-      },
-    });
+    const user = await convexClient.query(api.auth.getUserByEmail, { email });
 
     if (!user) {
       return NextResponse.json({ error: "Account not found" }, { status: 404 });
@@ -32,18 +25,9 @@ export async function POST(req: NextRequest) {
 
     const verifyCode = generateOTP(6);
 
-    await prisma.verificationToken.deleteMany({
-      where: {
-        identifier: user.email,
-      },
-    });
-
-    await prisma.verificationToken.create({
-      data: {
-        identifier: user.email,
-        token: verifyCode,
-        expires: new Date(Date.now() + 10 * 60 * 1000),
-      },
+    await convexClient.mutation(api.auth.createVerificationToken, {
+      email,
+      code: verifyCode,
     });
 
     const delivery = await sendVerificationOtpEmail(

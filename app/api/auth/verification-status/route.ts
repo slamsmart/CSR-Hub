@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { convexClient } from "@/lib/convex";
+import { api } from "@/convex/_generated/api";
 
 export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get("email")?.trim().toLowerCase();
@@ -9,13 +10,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        emailVerified: true,
-      },
-    });
+    const user = await convexClient.query(api.auth.getUserByEmail, { email });
 
     return NextResponse.json({
       exists: Boolean(user),

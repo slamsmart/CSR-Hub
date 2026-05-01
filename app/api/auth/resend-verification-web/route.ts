@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { generateOTP } from "@/lib/security";
 import { sendVerificationOtpEmail } from "@/lib/email";
+import { convexClient } from "@/lib/convex";
+import { api } from "@/convex/_generated/api";
 
 function buildRedirect(
   req: NextRequest,
@@ -25,14 +26,8 @@ export async function POST(req: NextRequest) {
       return buildRedirect(req, "invalid");
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        email: true,
-        name: true,
-        emailVerified: true,
-      },
-    });
+    // Check user exists and not already verified
+    const user = await convexClient.query(api.auth.getUserByEmail, { email });
 
     if (!user) {
       return buildRedirect(req, "invalid", email);
@@ -44,18 +39,10 @@ export async function POST(req: NextRequest) {
 
     const verifyCode = generateOTP(6);
 
-    await prisma.verificationToken.deleteMany({
-      where: {
-        identifier: user.email,
-      },
-    });
-
-    await prisma.verificationToken.create({
-      data: {
-        identifier: user.email,
-        token: verifyCode,
-        expires: new Date(Date.now() + 10 * 60 * 1000),
-      },
+    // Create verification token via Convex
+    await convexClient.mutation(api.auth.createVerificationToken, {
+      email,
+      code: verifyCode,
     });
 
     const delivery = await sendVerificationOtpEmail(

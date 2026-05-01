@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { convexClient } from "@/lib/convex";
+import { api } from "@/convex/_generated/api";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,64 +12,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email and code are required" }, { status: 400 });
     }
 
-    const verificationToken = await prisma.verificationToken.findFirst({
-      where: {
-        identifier: email,
-        token: code,
-      },
-      orderBy: {
-        expires: "desc",
-      },
-    });
-
-    if (!verificationToken) {
-      return NextResponse.json({ error: "Invalid verification code" }, { status: 400 });
+    try {
+      await convexClient.mutation(api.auth.verifyEmail, { email, code });
+      return NextResponse.json({ success: true });
+    } catch (error: any) {
+      const msg = error?.message || "";
+      if (msg.includes("INVALID_CODE") || msg.includes("USER_NOT_FOUND")) {
+        return NextResponse.json({ error: "Invalid verification code" }, { status: 400 });
+      }
+      if (msg.includes("CODE_EXPIRED")) {
+        return NextResponse.json({ error: "Verification code has expired" }, { status: 400 });
+      }
+      throw error;
     }
-
-    if (verificationToken.expires < new Date()) {
-      await prisma.verificationToken.deleteMany({
-        where: {
-          identifier: email,
-        },
-      });
-
-      return NextResponse.json({ error: "Verification code has expired" }, { status: 400 });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true, emailVerified: true },
-    });
-
-    if (!user) {
-      await prisma.verificationToken.deleteMany({
-        where: {
-          identifier: email,
-        },
-      });
-
-      return NextResponse.json({ error: "Account not found" }, { status: 404 });
-    }
-
-    if (!user.emailVerified) {
-      await prisma.user.update({
-        where: {
-          email,
-        },
-        data: {
-          emailVerified: new Date(),
-          emailVerifyToken: null,
-        },
-      });
-    }
-
-    await prisma.verificationToken.deleteMany({
-      where: {
-        identifier: email,
-      },
-    });
-
-    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[Verify OTP]", error);
     return NextResponse.json({ error: "Failed to verify code" }, { status: 500 });

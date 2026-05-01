@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { convexClient } from "@/lib/convex";
+import { api } from "@/convex/_generated/api";
 
 function buildRedirect(req: NextRequest, status: "success" | "invalid" | "error", email?: string) {
   const url = new URL("/verify-email", req.url);
@@ -20,58 +21,16 @@ export async function POST(req: NextRequest) {
       return buildRedirect(req, "invalid", email);
     }
 
-    const verificationToken = await prisma.verificationToken.findFirst({
-      where: {
-        identifier: email,
-        token: code,
-      },
-      orderBy: {
-        expires: "desc",
-      },
-    });
-
-    if (!verificationToken || verificationToken.expires < new Date()) {
-      await prisma.verificationToken.deleteMany({
-        where: {
-          identifier: email,
-        },
-      });
-
-      return buildRedirect(req, "invalid", email);
+    try {
+      await convexClient.mutation(api.auth.verifyEmail, { email, code });
+      return buildRedirect(req, "success", email);
+    } catch (error: any) {
+      const msg = error?.message || "";
+      if (msg.includes("INVALID_CODE") || msg.includes("USER_NOT_FOUND") || msg.includes("CODE_EXPIRED")) {
+        return buildRedirect(req, "invalid", email);
+      }
+      throw error;
     }
-
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: { emailVerified: true },
-    });
-
-    if (!user) {
-      await prisma.verificationToken.deleteMany({
-        where: {
-          identifier: email,
-        },
-      });
-
-      return buildRedirect(req, "invalid", email);
-    }
-
-    if (!user.emailVerified) {
-      await prisma.user.update({
-        where: { email },
-        data: {
-          emailVerified: new Date(),
-          emailVerifyToken: null,
-        },
-      });
-    }
-
-    await prisma.verificationToken.deleteMany({
-      where: {
-        identifier: email,
-      },
-    });
-
-    return buildRedirect(req, "success", email);
   } catch (error) {
     console.error("[Verify OTP Web]", error);
     return buildRedirect(req, "error");

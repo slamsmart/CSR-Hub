@@ -1,4 +1,24 @@
-import { UserRole, OrgType } from "@prisma/client";
+// Local type definitions — no longer depends on @prisma/client
+type UserRole =
+  | "SUPER_ADMIN"
+  | "ADMIN_PLATFORM"
+  | "VERIFIKATOR"
+  | "AUDITOR"
+  | "PERUSAHAAN"
+  | "PENGUSUL"
+  | "DONOR_KOLABORATOR"
+  | "PUBLIC";
+
+type OrgType =
+  | "PERUSAHAAN"
+  | "NGO"
+  | "KOMUNITAS"
+  | "SEKOLAH"
+  | "KOPERASI"
+  | "YAYASAN"
+  | "STARTUP_SOSIAL"
+  | "PEMERINTAH"
+  | "LAINNYA";
 
 declare module "next-auth" {
   interface User {

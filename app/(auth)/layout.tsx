@@ -9,11 +9,24 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 via-brand-50/30 to-teal-50/30">
-      <div className="relative hidden overflow-hidden gradient-hero p-12 lg:flex lg:w-1/2 lg:flex-col lg:justify-between">
+      <div className="relative hidden overflow-hidden p-12 lg:flex lg:w-1/2 lg:flex-col lg:justify-between">
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/images/auth-bg.png')" }}
+        />
+        {/* Dark gradient overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-900/85 via-brand-800/80 to-teal-900/85" />
+        {/* Bottom vignette for depth */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+        {/* Decorative blurs */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
-          <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
+          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-400/15 blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-teal-400/15 blur-3xl" />
+          <div className="absolute right-1/3 top-1/3 h-48 w-48 rounded-full bg-white/5 blur-2xl" />
         </div>
+        {/* Subtle pattern overlay */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E\")" }} />
 
         <div className="relative z-10">
           <Link href="/" className="flex items-center gap-2.5">

@@ -1,12 +1,11 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { UserRole } from "@prisma/client";
 
 // Routes that require authentication
 const PROTECTED_ROUTES = ["/dashboard", "/proposals/buat", "/pengaturan", "/notifikasi"];
 
 // Routes requiring specific roles
-const ROLE_ROUTES: Record<string, UserRole[]> = {
+const ROLE_ROUTES: Record<string, string[]> = {
   "/admin": ["SUPER_ADMIN", "ADMIN_PLATFORM"],
   "/admin/verifikasi": ["SUPER_ADMIN", "ADMIN_PLATFORM", "VERIFIKATOR"],
   "/admin/audit": ["SUPER_ADMIN", "ADMIN_PLATFORM", "AUDITOR"],
@@ -38,7 +37,7 @@ export default auth((req) => {
         return NextResponse.redirect(loginUrl);
       }
 
-      const userRole = (session.user as any)?.role as UserRole;
+      const userRole = (session.user as any)?.role as string;
       if (!roles.includes(userRole)) {
         return NextResponse.redirect(new URL("/unauthorized", req.url));
       }

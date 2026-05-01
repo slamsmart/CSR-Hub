@@ -1,11 +1,10 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { UserRole } from "@prisma/client";
+import { convexClient } from "@/lib/convex";
+import { api } from "@/convex/_generated/api";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -13,7 +12,6 @@ const loginSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 }, // 30 days
   pages: {
     signIn: "/login",
@@ -39,15 +37,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const { email, password } = parsed.data;
 
-        const user = await prisma.user.findUnique({
-          where: { email: email.toLowerCase() },
-          include: {
-            organization: {
-              include: { organization: true },
-              where: { isActive: true },
-              take: 1,
-            },
-          },
+        // Query Convex for the user
+        const user = await convexClient.query(api.auth.getUserByEmail, {
+          email: email.toLowerCase(),
         });
 
         if (!user || !user.password) return null;
@@ -58,7 +50,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!user.emailVerified) return null;
 
         // Check account lockout
-        if (user.lockedUntil && user.lockedUntil > new Date()) {
+        if (user.lockedUntil && user.lockedUntil > Date.now()) {
           return null;
         }
 
@@ -66,35 +58,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const isValid = await bcrypt.compare(password, user.password);
 
         if (!isValid) {
-          // Increment login attempts
-          const attempts = user.loginAttempts + 1;
-          const lockUntil = attempts >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null;
-
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              loginAttempts: attempts,
-              lockedUntil: lockUntil,
-            },
+          // Increment login attempts in Convex
+          await convexClient.mutation(api.auth.incrementLoginAttempts, {
+            email: email.toLowerCase(),
           });
-
           return null;
         }
 
         // Reset login attempts on success
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            loginAttempts: 0,
-            lockedUntil: null,
-            lastLoginAt: new Date(),
-          },
+        await convexClient.mutation(api.auth.resetLoginAttempts, {
+          email: email.toLowerCase(),
         });
 
-        const org = user.organization[0]?.organization;
+        const org = user.organization;
 
         return {
-          id: user.id,
+          id: user._id,
           email: user.email,
           name: user.name,
           image: user.image,
@@ -114,22 +93,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email = user.email?.toLowerCase();
         if (!email) return false;
 
-        // Ensure users who previously registered with email/password
-        // can sign in with the same verified Google account.
-        const existingUser = await prisma.user.findUnique({
-          where: { email },
-          select: { id: true, role: true, isActive: true, isSuspended: true, emailVerified: true },
-        });
+        try {
+          const result = await convexClient.mutation(api.auth.findOrCreateGoogleUser, {
+            email,
+            name: user.name || email.split("@")[0],
+            image: user.image || undefined,
+            googleAccountId: account.providerAccountId,
+          });
 
-        if (existingUser) {
-          if (!existingUser.isActive || existingUser.isSuspended) return false;
-          if (!existingUser.emailVerified) {
-            return false;
-          }
-          user.id = existingUser.id;
-          user.role = existingUser.role;
-        } else {
-          user.role = "PUBLIC";
+          // Attach Convex data to user object for JWT callback
+          user.id = result.id;
+          (user as any).role = result.role;
+          (user as any).organizationId = result.organization?.id;
+          (user as any).organizationName = result.organization?.name;
+          (user as any).organizationType = result.organization?.type;
+          (user as any).isVerified = result.organization?.verificationStatus === "TERVERIFIKASI";
+        } catch (err: any) {
+          if (err?.message?.includes("ACCOUNT_BLOCKED")) return false;
+          console.error("[Auth] Google sign-in error:", err);
+          return false;
         }
       }
 
@@ -138,37 +120,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user, account, trigger, session }) {
       if (user) {
         token.id = user.id;
-
-        // For OAuth (Google), fetch full user data from DB since
-        // PrismaAdapter only returns base fields without role/org
-        if (account?.provider === "google") {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            include: {
-              organization: {
-                include: { organization: true },
-                where: { isActive: true },
-                take: 1,
-              },
-            },
-          });
-          if (dbUser) {
-            token.role = dbUser.role;
-            const org = dbUser.organization[0]?.organization;
-            token.organizationId = org?.id;
-            token.organizationName = org?.name;
-            token.organizationType = org?.type;
-            token.isVerified = org?.verificationStatus === "TERVERIFIKASI";
-          } else {
-            token.role = (user as any).role || "PUBLIC";
-          }
-        } else {
-          token.role = (user as any).role || "PUBLIC";
-          token.organizationId = (user as any).organizationId;
-          token.organizationName = (user as any).organizationName;
-          token.organizationType = (user as any).organizationType;
-          token.isVerified = (user as any).isVerified;
-        }
+        token.role = (user as any).role || "PUBLIC";
+        token.organizationId = (user as any).organizationId;
+        token.organizationName = (user as any).organizationName;
+        token.organizationType = (user as any).organizationType;
+        token.isVerified = (user as any).isVerified;
       }
 
       if (trigger === "update" && session) {
@@ -180,7 +136,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
-        session.user.role = (token.role as UserRole) || "PUBLIC";
+        session.user.role = (token.role as any) || "PUBLIC";
         session.user.organizationId = token.organizationId as string | undefined;
         session.user.organizationName = token.organizationName as string | undefined;
         session.user.organizationType = token.organizationType as any;
@@ -190,14 +146,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
-    async signIn({ user, account, isNewUser }) {
-      if (user.id) {
-        await prisma.loginHistory.create({
-          data: {
-            userId: user.id,
+    async signIn({ user, account }) {
+      if (user.email) {
+        try {
+          await convexClient.mutation(api.auth.recordLoginHistory, {
+            email: user.email.toLowerCase(),
             success: true,
-          },
-        });
+          });
+        } catch (e) {
+          console.error("[Auth] Failed to record login history:", e);
+        }
       }
     },
   },
@@ -206,6 +164,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 // ============================================================
 // PERMISSION HELPERS
 // ============================================================
+
+import type { UserRole } from "@/types";
 
 export const ROLE_PERMISSIONS = {
   SUPER_ADMIN: ["*"],

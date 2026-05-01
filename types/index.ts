@@ -1,29 +1,113 @@
-import {
-  UserRole,
-  OrgType,
-  VerificationStatus,
-  ProposalStatus,
-  ProposalCategory,
-  SDGCategory,
-  FundingStatus,
-  ProjectStatus,
-  NotificationType,
-  RiskLevel,
-} from "@prisma/client";
 import { STRUCTURE_COPY, type AppLanguage } from "@/lib/i18n";
 
-export type {
-  UserRole,
-  OrgType,
-  VerificationStatus,
-  ProposalStatus,
-  ProposalCategory,
-  SDGCategory,
-  FundingStatus,
-  ProjectStatus,
-  NotificationType,
-  RiskLevel,
-};
+// ============================================================
+// LOCAL ENUM TYPES (previously from @prisma/client)
+// ============================================================
+
+export type UserRole =
+  | "SUPER_ADMIN"
+  | "ADMIN_PLATFORM"
+  | "VERIFIKATOR"
+  | "AUDITOR"
+  | "PERUSAHAAN"
+  | "PENGUSUL"
+  | "DONOR_KOLABORATOR"
+  | "PUBLIC";
+
+export type OrgType =
+  | "PERUSAHAAN"
+  | "NGO"
+  | "KOMUNITAS"
+  | "SEKOLAH"
+  | "KOPERASI"
+  | "YAYASAN"
+  | "STARTUP_SOSIAL"
+  | "PEMERINTAH"
+  | "LAINNYA";
+
+export type VerificationStatus =
+  | "BELUM_DIAJUKAN"
+  | "MENUNGGU_REVIEW"
+  | "DALAM_REVIEW"
+  | "MEMBUTUHKAN_DOKUMEN_TAMBAHAN"
+  | "TERVERIFIKASI"
+  | "DITOLAK"
+  | "DICABUT";
+
+export type ProposalStatus =
+  | "DRAFT"
+  | "DIKIRIM"
+  | "DALAM_REVIEW"
+  | "MEMBUTUHKAN_REVISI"
+  | "DISETUJUI"
+  | "DITOLAK"
+  | "DIDANAI"
+  | "BERJALAN"
+  | "SELESAI"
+  | "DIBATALKAN";
+
+export type ProposalCategory =
+  | "PENDIDIKAN"
+  | "LINGKUNGAN_HIDUP"
+  | "EKONOMI_PEMBERDAYAAN"
+  | "KESEHATAN_MASYARAKAT"
+  | "INFRASTRUKTUR_SOSIAL"
+  | "PEMBERDAYAAN_PEREMPUAN"
+  | "PENGEMBANGAN_UMKM"
+  | "KEBENCANAAN_DAN_KEMANUSIAAN"
+  | "SENI_DAN_BUDAYA"
+  | "OLAHRAGA_DAN_KEPEMUDAAN"
+  | "TEKNOLOGI_DAN_INOVASI"
+  | "PERTANIAN_DAN_PANGAN"
+  | "LAINNYA";
+
+export type SDGCategory =
+  | "SDG1_TANPA_KEMISKINAN"
+  | "SDG2_TANPA_KELAPARAN"
+  | "SDG3_KESEHATAN_BAIK"
+  | "SDG4_PENDIDIKAN_BERKUALITAS"
+  | "SDG5_KESETARAAN_GENDER"
+  | "SDG6_AIR_BERSIH_SANITASI"
+  | "SDG7_ENERGI_BERSIH"
+  | "SDG8_PEKERJAAN_LAYAK"
+  | "SDG9_INDUSTRI_INOVASI"
+  | "SDG10_BERKURANGNYA_KESENJANGAN"
+  | "SDG11_KOTA_KOMUNITAS_BERKELANJUTAN"
+  | "SDG12_KONSUMSI_PRODUKSI_BERTANGGUNG_JAWAB"
+  | "SDG13_PENANGANAN_PERUBAHAN_IKLIM"
+  | "SDG14_KEHIDUPAN_BAWAH_LAUT"
+  | "SDG15_KEHIDUPAN_DI_DARAT"
+  | "SDG16_PERDAMAIAN_KEADILAN"
+  | "SDG17_KEMITRAAN_UNTUK_TUJUAN";
+
+export type FundingStatus =
+  | "MENUNGGU"
+  | "DIKONFIRMASI"
+  | "DISALURKAN"
+  | "DIBATALKAN";
+
+export type ProjectStatus =
+  | "PERSIAPAN"
+  | "BERJALAN"
+  | "MONITORING"
+  | "SELESAI"
+  | "BERMASALAH"
+  | "DITANGGUHKAN";
+
+export type NotificationType =
+  | "PROPOSAL_SUBMITTED"
+  | "PROPOSAL_APPROVED"
+  | "PROPOSAL_REJECTED"
+  | "FUNDING_RECEIVED"
+  | "PROJECT_UPDATE"
+  | "VERIFICATION_REQUEST"
+  | "SYSTEM_ANNOUNCEMENT";
+
+export type RiskLevel =
+  | "LOW"
+  | "MEDIUM"
+  | "HIGH"
+  | "CRITICAL";
 
 // ============================================================
 // EXTENDED TYPES

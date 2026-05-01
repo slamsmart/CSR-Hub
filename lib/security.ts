@@ -1,14 +1,12 @@
 import { z } from "zod";
-import { prisma } from "./prisma";
-import { AuditAction } from "@prisma/client";
 
 // ============================================================
-// AUDIT LOGGING
+// AUDIT LOGGING (now handled in Convex mutations directly)
 // ============================================================
 
 interface AuditLogParams {
   userId?: string;
-  action: AuditAction;
+  action: string;
   resource: string;
   resourceId?: string;
   oldValue?: unknown;
@@ -18,25 +16,10 @@ interface AuditLogParams {
   metadata?: Record<string, unknown>;
 }
 
-export async function createAuditLog(params: AuditLogParams): Promise<void> {
-  try {
-    await prisma.auditLog.create({
-      data: {
-        userId: params.userId,
-        action: params.action,
-        resource: params.resource,
-        resourceId: params.resourceId,
-        oldValue: params.oldValue ? JSON.stringify(params.oldValue) : undefined,
-        newValue: params.newValue ? JSON.stringify(params.newValue) : undefined,
-        ipAddress: params.ipAddress,
-        userAgent: params.userAgent?.slice(0, 500),
-        metadata: (params.metadata ?? null) as any,
-      },
-    });
-  } catch (error) {
-    // Fail silently - don't block main operation for audit failures
-    console.error("[AuditLog] Failed to create audit log:", error);
-  }
+export async function createAuditLog(_params: AuditLogParams): Promise<void> {
+  // Audit logging is now handled directly in Convex mutations.
+  // This function is kept as a no-op for backward compatibility.
+  console.log("[AuditLog] Audit logging is handled by Convex mutations.");
 }
 
 // ============================================================

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { convexClient } from "@/lib/convex";
+import { api } from "@/convex/_generated/api";
 
 function buildRedirectUrl(req: NextRequest, status: "success" | "invalid" | "error") {
   const origin = req.nextUrl.origin.replace(/\/$/, "");
@@ -14,26 +15,24 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { emailVerifyToken: token },
-      select: { id: true, emailVerified: true },
-    });
+    // The token-based verification is legacy (link-based).
+    // For the OTP flow, the verify-otp routes are used instead.
+    // This route handles the old link-based flow by looking up by token.
+    // Since Convex doesn't have emailVerifyToken field, we treat the token
+    // as an OTP code and verify via the verifyEmail mutation if an email is provided.
+    const email = req.nextUrl.searchParams.get("email")?.trim();
 
-    if (!user) {
-      return NextResponse.redirect(buildRedirectUrl(req, "invalid"));
+    if (email) {
+      try {
+        await convexClient.mutation(api.auth.verifyEmail, { email, code: token });
+        return NextResponse.redirect(buildRedirectUrl(req, "success"));
+      } catch {
+        return NextResponse.redirect(buildRedirectUrl(req, "invalid"));
+      }
     }
 
-    if (!user.emailVerified) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          emailVerified: new Date(),
-          emailVerifyToken: null,
-        },
-      });
-    }
-
-    return NextResponse.redirect(buildRedirectUrl(req, "success"));
+    // Without email, we can't look up by token alone in the new schema
+    return NextResponse.redirect(buildRedirectUrl(req, "invalid"));
   } catch (error) {
     console.error("[Verify Email]", error);
     return NextResponse.redirect(buildRedirectUrl(req, "error"));
